@@ -6,6 +6,9 @@ const commands = [
     .setName("startup")
     .setDescription("we all know that one person..."),
   new SlashCommandBuilder()
+    .setName("source")
+    .setDescription("link to the source code of the bot"),
+  new SlashCommandBuilder()
     .setName("top10")
     .setDescription("get's the top 10 players of the guild by star")
     .addStringOption((option) =>

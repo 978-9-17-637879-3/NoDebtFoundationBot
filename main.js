@@ -23,7 +23,10 @@ const {
   HYPIXEL_API_KEY,
   DISCORD_BOT_TOKEN,
   HYPIXEL_GUILD_ID,
+  SOURCE_URL
 } = require("./config.json");
+
+const DESIRED_REQUESTS_PER_MINUTE = 60;
 
 function safeDiv(a, b) {
   return a / (b === 0 ? 1 : b);
@@ -46,9 +49,9 @@ async function scan() {
       id: HYPIXEL_GUILD_ID,
     },
   });
-  
-  const timeout = (250 / guildResponse.data.guild.members.length) * 1000;
 
+  const delay = (DESIRED_REQUESTS_PER_MINUTE/guildResponse.data.guild.members.length) * 1000;
+  
   for (const member of guildResponse.data.guild.members) {
     try {
       const playerResponse = await axios({
@@ -59,6 +62,7 @@ async function scan() {
           uuid: member.uuid,
         },
       });
+
 
       if (playerResponse.data.player.achievements?.bedwars_level) {
         const memberData = {
@@ -100,7 +104,7 @@ async function scan() {
     } catch (e) {
       console.error(e);
     }
-    await new Promise((resolve) => setTimeout(resolve, timeout));
+    await new Promise((resolve) => setTimeout(resolve, delay));
   }
 }
 
@@ -155,6 +159,10 @@ client.on("interactionCreate", async (interaction) => {
         )
         .join("\n")
     );
+  }
+
+  if (interaction.commandName === "source") {
+    await interaction.reply(SOURCE_URL);
   }
 });
 
