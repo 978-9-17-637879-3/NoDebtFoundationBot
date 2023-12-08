@@ -1,5 +1,5 @@
 const { REST, Routes, SlashCommandBuilder } = require("discord.js");
-const { DISCORD_BOT_TOKEN, CLIENT_ID } = require("./config.json");
+const { DISCORD_BOT_TOKEN, DISCORD_CLIENT_ID } = require("./config.json");
 
 const commands = [
   new SlashCommandBuilder()
@@ -25,7 +25,7 @@ const rest = new REST({ version: "10" }).setToken(DISCORD_BOT_TOKEN);
   try {
     console.log("Started refreshing application (/) commands.");
 
-    await rest.put(Routes.applicationCommands(CLIENT_ID), {
+    await rest.put(Routes.applicationCommands(DISCORD_CLIENT_ID), {
       body: commands.map((command) => command.toJSON()),
     });
 
