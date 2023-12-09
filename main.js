@@ -1,6 +1,8 @@
 const axios = require("axios");
 const Discord = require("discord.js");
 const { MongoClient, ServerApiVersion } = require("mongodb");
+const path = require("path");
+const fs = require("fs");
 
 const client = new Discord.Client({
   intents: [
@@ -17,19 +19,19 @@ const mongoClient = new MongoClient("mongodb://localhost:27017", {
   },
 });
 
-let membersCollection;
+let database;
 
 const {
   HYPIXEL_API_KEY,
   DISCORD_BOT_TOKEN,
   HYPIXEL_GUILD_ID,
-  SOURCE_URL
+  SOURCE_URL,
 } = require("./config.json");
 
 const DESIRED_REQUESTS_PER_MINUTE = 60;
 
 function safeDiv(a, b) {
-  return a / (b === 0 ? 1 : b);
+  return (a ?? 0) / ((b ?? 0) === 0 ? 1 : b);
 }
 
 function safeAdder(...args) {
@@ -50,8 +52,10 @@ async function scan() {
     },
   });
 
-  const delay = (DESIRED_REQUESTS_PER_MINUTE/guildResponse.data.guild.members.length) * 1000;
-  
+  const delay =
+    (DESIRED_REQUESTS_PER_MINUTE / guildResponse.data.guild.members.length) *
+    1000;
+
   for (const member of guildResponse.data.guild.members) {
     try {
       const playerResponse = await axios({
@@ -62,7 +66,6 @@ async function scan() {
           uuid: member.uuid,
         },
       });
-
 
       if (playerResponse.data.player.achievements?.bedwars_level) {
         const memberData = {
@@ -91,10 +94,15 @@ async function scan() {
                 .four_four_final_deaths_bedwars
             )
           ),
+          falling_deaths_per_death: safeDiv(
+            playerResponse.data.player.stats.Bedwars.fall_deaths_bedwars,
+            playerResponse.data.player.stats.Bedwars.deaths_bedwars
+          ),
         };
         console.log(memberData);
-        
-        await membersCollection
+
+        await database
+          .collection("members")
           .updateOne(
             { uuid: member.uuid },
             { $set: memberData },
@@ -120,50 +128,31 @@ async function scanLoop() {
 client.on("ready", async () => {
   console.log("ready!");
 
-  await mongoClient.connect();
-  membersCollection = mongoClient.db('nodebtfoundationbot').collection('members')
+  database = mongoClient.db("nodebtfoundationbot");
 
   scanLoop();
 });
 
-const sortMap = {
-  fkdr: (a, b) => b.fkdr - a.fkdr,
-  star: (a, b) => b.bedwars_level - a.bedwars_level,
-};
+const commandsFolderPath = path.join(__dirname, "commands/");
+
+const commands = fs
+  .readdirSync(commandsFolderPath)
+  .map((fileName) => require(path.join(commandsFolderPath, fileName)));
+
+const commandsMap = Object.fromEntries(
+  commands.map((command) => [command.name, command.exec])
+);
 
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
-  if (interaction.commandName === "startup") {
-    await interaction.reply(
-      "bro... let's build a startup together! i got this great app idea, and if you make it, you can get a 5% cut :fire:"
-    );
+  const commandExec = commandsMap[interaction.commandName];
+
+  if (!commandExec) {
+    throw new Error();
   }
 
-  if (interaction.commandName === "top10") {
-    const members = await membersCollection.find({}).toArray();
-
-    const comp =
-      sortMap[interaction.options.get("sort").value] ?? sortMap["star"];
-
-    await interaction.reply(
-      members
-        .filter((a) => a.bedwars_level)
-        .sort(comp)
-        .slice(0, 10)
-        .map(
-          (member, index) =>
-            `${index + 1}. [${member.bedwars_level}☆] ${
-              member.name
-            } (FKDR: ${member.fkdr.toFixed(2)})`
-        )
-        .join("\n")
-    );
-  }
-
-  if (interaction.commandName === "source") {
-    await interaction.reply(SOURCE_URL);
-  }
+  return commandExec(interaction, database);
 });
 
-client.login(DISCORD_BOT_TOKEN);
+mongoClient.connect().then(() => client.login(DISCORD_BOT_TOKEN));
