@@ -1,6 +1,6 @@
 const axios = require("axios");
 const Discord = require("discord.js");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { createClient } = require("redis");
 const path = require("path");
 const fs = require("fs");
 
@@ -11,24 +11,15 @@ const client = new Discord.Client({
   ],
 });
 
-const mongoClient = new MongoClient("mongodb://localhost:27017", {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  },
-});
-
-let database;
+const redisClient = createClient();
 
 const {
   HYPIXEL_API_KEY,
   DISCORD_BOT_TOKEN,
   HYPIXEL_GUILD_ID,
-  SOURCE_URL,
 } = require("./config.json");
 
-const DESIRED_REQUESTS_PER_MINUTE = 60;
+const DESIRED_REQUESTS_PER_FIVE_MINUTES = 290;
 
 function safeDiv(a, b) {
   return (a ?? 0) / ((b ?? 0) === 0 ? 1 : b);
@@ -53,11 +44,17 @@ async function scan() {
   });
 
   const delay =
-    (DESIRED_REQUESTS_PER_MINUTE / guildResponse.data.guild.members.length) *
+    (DESIRED_REQUESTS_PER_FIVE_MINUTES /
+      5 /
+      guildResponse.data.guild.members.length) *
     1000;
+
+  let datas = [];
 
   for (const member of guildResponse.data.guild.members) {
     try {
+      console.log(member.uuid);
+
       const playerResponse = await axios({
         method: "get",
         url: "https://api.hypixel.net/v2/player",
@@ -67,7 +64,20 @@ async function scan() {
         },
       });
 
-      if (playerResponse.data.player.achievements?.bedwars_level) {
+      if (
+        (playerResponse.data.player.achievements?.bedwars_level &&
+          !playerResponse.data.player.lastLogin || Date.now() - playerResponse.data.player.lastLogin < 1000 * 60 * 60 * 24 * 30)) {
+        const playerStatusResponse = await axios({
+          method: "get",
+          url: "https://api.hypixel.net/v2/status",
+          headers: { "API-Key": HYPIXEL_API_KEY },
+          params: {
+            uuid: member.uuid,
+          },
+        });
+
+        await new Promise((resolve) => setTimeout(resolve, delay));
+
         const memberData = {
           name: playerResponse.data.player.displayname,
           uuid: member.uuid,
@@ -98,22 +108,20 @@ async function scan() {
             playerResponse.data.player.stats.Bedwars.fall_deaths_bedwars,
             playerResponse.data.player.stats.Bedwars.deaths_bedwars
           ),
+          is_online: playerStatusResponse.data.session.online,
+          last_login_time: playerResponse.data.player.lastLogin,
         };
         console.log(memberData);
 
-        await database
-          .collection("members")
-          .updateOne(
-            { uuid: member.uuid },
-            { $set: memberData },
-            { upsert: true }
-          );
+        datas.push(memberData);
       }
     } catch (e) {
       console.error(e);
     }
     await new Promise((resolve) => setTimeout(resolve, delay));
   }
+
+  await redisClient.set("memberData", JSON.stringify(datas));
 }
 
 async function scanLoop() {
@@ -122,13 +130,11 @@ async function scanLoop() {
   } catch (e) {
     console.error(e);
   }
-  await new Promise((resolve) => setTimeout(resolve, 60000));
+  await new Promise((resolve) => setTimeout(resolve, 1000));
 }
 
 client.on("ready", async () => {
   console.log("ready!");
-
-  database = mongoClient.db("nodebtfoundationbot");
 
   scanLoop();
 });
@@ -152,7 +158,7 @@ client.on("interactionCreate", async (interaction) => {
     throw new Error();
   }
 
-  return commandExec(interaction, database);
+  return commandExec(interaction, redisClient);
 });
 
-mongoClient.connect().then(() => client.login(DISCORD_BOT_TOKEN));
+redisClient.connect().then(() => client.login(DISCORD_BOT_TOKEN));
