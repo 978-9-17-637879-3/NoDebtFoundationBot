@@ -46,7 +46,7 @@ async function scan() {
   const delay =
     (DESIRED_REQUESTS_PER_FIVE_MINUTES /
       5 /
-      guildResponse.data.guild.members.length) *
+      60) *
     1000;
 
   let datas = [];
@@ -122,6 +122,7 @@ async function scan() {
   }
 
   await redisClient.set("memberData", JSON.stringify(datas));
+  await redisClient.set("lastUpdated", Date.now().toString());
 }
 
 async function scanLoop() {
@@ -130,7 +131,9 @@ async function scanLoop() {
   } catch (e) {
     console.error(e);
   }
+
   await new Promise((resolve) => setTimeout(resolve, 1000));
+  scanLoop();
 }
 
 client.on("ready", async () => {
