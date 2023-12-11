@@ -153,11 +153,8 @@ client.on("interactionCreate", async (interaction) => {
 
   const commandExec = commandsMap[interaction.commandName];
 
-  if (!commandExec) {
-    throw new Error();
-  }
-
-  return commandExec(interaction, redisClient);
+  if (commandExec)
+    return commandExec(interaction, redisClient);
 });
 
 redisClient.connect().then(() => client.login(DISCORD_BOT_TOKEN));
