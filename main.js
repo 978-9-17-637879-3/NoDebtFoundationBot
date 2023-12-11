@@ -49,7 +49,9 @@ async function scan() {
     if (TRACKING_UUID_BLACKLIST.includes(member.uuid))
       continue;
 
+    let playerRequstResponseTime = 0;
     try {
+      const playerRequestStart = Date.now();
       const playerResponse = await axios({
         method: "get",
         url: "https://api.hypixel.net/v2/player",
@@ -58,6 +60,7 @@ async function scan() {
           uuid: member.uuid,
         },
       });
+      playerRequstResponseTime = Date.now() - playerRequestStart;
 
       if (
         (playerResponse.data.player.achievements?.bedwars_level &&
@@ -65,7 +68,8 @@ async function scan() {
         Date.now() - playerResponse.data.player.lastLogin <
           1000 * 60 * 60 * 24 * 30
       ) {
-        const playerStatusResponse = await axios({
+      const playerStatusRequestStart = Date.now();
+      const playerStatusResponse = await axios({
           method: "get",
           url: "https://api.hypixel.net/v2/status",
           headers: { "API-Key": HYPIXEL_API_KEY },
@@ -74,7 +78,7 @@ async function scan() {
           },
         });
 
-        await new Promise((resolve) => setTimeout(resolve, delay));
+        await new Promise((resolve) => setTimeout(resolve, delay - (Date.now() - playerStatusRequestStart)));
 
         const memberData = {
           name: playerResponse.data.player.displayname,
@@ -115,7 +119,7 @@ async function scan() {
     } catch (e) {
       console.error(e);
     }
-    await new Promise((resolve) => setTimeout(resolve, delay));
+    await new Promise((resolve) => setTimeout(resolve, delay - playerRequstResponseTime));
   }
 
   await redisClient.set("memberData", JSON.stringify(datas));
