@@ -14,6 +14,7 @@ const {
   HYPIXEL_API_KEY,
   DISCORD_BOT_TOKEN,
   HYPIXEL_GUILD_ID,
+  TRACKING_UUID_BLACKLIST
 } = require("./config.json");
 
 const DESIRED_REQUESTS_PER_FIVE_MINUTES = 290;
@@ -45,9 +46,10 @@ async function scan() {
   let datas = [];
 
   for (const member of guildResponse.data.guild.members) {
-    try {
-      console.log(member.uuid);
+    if (TRACKING_UUID_BLACKLIST.includes(member.uuid))
+      continue;
 
+    try {
       const playerResponse = await axios({
         method: "get",
         url: "https://api.hypixel.net/v2/player",
@@ -107,7 +109,6 @@ async function scan() {
           is_online: playerStatusResponse.data.session.online,
           last_login_time: playerResponse.data.player.lastLogin,
         };
-        console.log(memberData);
 
         datas.push(memberData);
       }
