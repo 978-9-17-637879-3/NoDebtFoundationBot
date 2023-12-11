@@ -5,10 +5,7 @@ const path = require("path");
 const fs = require("fs");
 
 const client = new Discord.Client({
-  intents: [
-    Discord.IntentsBitField.Flags.GuildMessages,
-    Discord.IntentsBitField.Flags.GuildMembers,
-  ],
+  intents: [],
 });
 
 const redisClient = createClient();
