@@ -43,11 +43,7 @@ async function scan() {
     },
   });
 
-  const delay =
-    (DESIRED_REQUESTS_PER_FIVE_MINUTES /
-      5 /
-      60) *
-    1000;
+  const delay = (DESIRED_REQUESTS_PER_FIVE_MINUTES / 5 / 60) * 1000;
 
   let datas = [];
 
@@ -66,7 +62,10 @@ async function scan() {
 
       if (
         (playerResponse.data.player.achievements?.bedwars_level &&
-          !playerResponse.data.player.lastLogin || Date.now() - playerResponse.data.player.lastLogin < 1000 * 60 * 60 * 24 * 30)) {
+          !playerResponse.data.player.lastLogin) ||
+        Date.now() - playerResponse.data.player.lastLogin <
+          1000 * 60 * 60 * 24 * 30
+      ) {
         const playerStatusResponse = await axios({
           method: "get",
           url: "https://api.hypixel.net/v2/status",

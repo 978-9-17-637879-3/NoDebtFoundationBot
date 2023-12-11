@@ -6,8 +6,10 @@ module.exports = {
     const members = JSON.parse((await redisClient.get("memberData")) ?? "[]");
     const lastUpdated = Number((await redisClient.get("lastUpdated")) ?? "0");
 
+    const membersOnlineString = members.filter((member) => member.is_online).map(member => member.name).join(", ");
+
     return interaction.reply(
-      (members.filter((member) => member.is_online).map(member => member.name).join(", ") ?? "No one is online! What a rarity...") + ` (updated ${Math.floor((Date.now()-lastUpdated)/1000)} seconds ago)`
+      (membersOnlineString ? membersOnlineString : "No one is online! What a rarity...") + ` (updated ${Math.floor((Date.now()-lastUpdated)/1000)} seconds ago)`
     );
   },
   commandData: new SlashCommandBuilder()
