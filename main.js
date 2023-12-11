@@ -5,161 +5,163 @@ const path = require("path");
 const fs = require("fs");
 
 const client = new Discord.Client({
-  intents: [],
+    intents: [],
 });
 
 const redisClient = createClient();
 
 const {
-  HYPIXEL_API_KEY,
-  DISCORD_BOT_TOKEN,
-  HYPIXEL_GUILD_ID,
-  TRACKING_UUID_BLACKLIST
+    HYPIXEL_API_KEY,
+    DISCORD_BOT_TOKEN,
+    HYPIXEL_GUILD_ID,
+    TRACKING_UUID_BLACKLIST,
 } = require("./config.json");
 
 const DESIRED_REQUESTS_PER_FIVE_MINUTES = 290;
 
 function safeDiv(a, b) {
-  return (a ?? 0) / ((b ?? 0) === 0 ? 1 : b);
+    return (a ?? 0) / ((b ?? 0) === 0 ? 1 : b);
 }
 
 function safeAdder(...args) {
-  sum = 0;
-  for (const arg of args) {
-    sum += arg ?? 0;
-  }
-  return sum;
+    sum = 0;
+    for (const arg of args) {
+        sum += arg ?? 0;
+    }
+    return sum;
 }
 
 async function scan() {
-  const guildResponse = await axios({
-    method: "get",
-    url: "https://api.hypixel.net/v2/guild",
-    headers: { "API-Key": HYPIXEL_API_KEY },
-    params: {
-      id: HYPIXEL_GUILD_ID,
-    },
-  });
-
-  const delay = (DESIRED_REQUESTS_PER_FIVE_MINUTES / 5 / 60) * 1000;
-
-  let datas = [];
-
-  for (const member of guildResponse.data.guild.members) {
-    if (TRACKING_UUID_BLACKLIST.includes(member.uuid))
-      continue;
-
-    let playerRequstResponseTime = 0;
-    try {
-      const playerRequestStart = Date.now();
-      const playerResponse = await axios({
+    const guildResponse = await axios({
         method: "get",
-        url: "https://api.hypixel.net/v2/player",
+        url: "https://api.hypixel.net/v2/guild",
         headers: { "API-Key": HYPIXEL_API_KEY },
         params: {
-          uuid: member.uuid,
+            id: HYPIXEL_GUILD_ID,
         },
-      });
-      playerRequstResponseTime = Date.now() - playerRequestStart;
+    });
 
-      if (
-        (playerResponse.data.player.achievements?.bedwars_level &&
-          !playerResponse.data.player.lastLogin) ||
-        Date.now() - playerResponse.data.player.lastLogin <
-          1000 * 60 * 60 * 24 * 30
-      ) {
-      const playerStatusRequestStart = Date.now();
-      const playerStatusResponse = await axios({
-          method: "get",
-          url: "https://api.hypixel.net/v2/status",
-          headers: { "API-Key": HYPIXEL_API_KEY },
-          params: {
-            uuid: member.uuid,
-          },
-        });
+    const delay = (DESIRED_REQUESTS_PER_FIVE_MINUTES / 5 / 60) * 1000;
 
-        await new Promise((resolve) => setTimeout(resolve, delay - (Date.now() - playerStatusRequestStart)));
+    let datas = [];
 
-        const memberData = {
-          name: playerResponse.data.player.displayname,
-          uuid: member.uuid,
-          bedwars_level: playerResponse.data.player.achievements.bedwars_level,
-          fkdr: safeDiv(
-            safeAdder(
-              playerResponse.data.player.stats.Bedwars
-                .eight_one_final_kills_bedwars,
-              playerResponse.data.player.stats.Bedwars
-                .eight_two_final_kills_bedwars,
-              playerResponse.data.player.stats.Bedwars
-                .four_three_final_kills_bedwars,
-              playerResponse.data.player.stats.Bedwars
-                .four_four_final_kills_bedwars
-            ),
-            safeAdder(
-              playerResponse.data.player.stats.Bedwars
-                .eight_one_final_deaths_bedwars,
-              playerResponse.data.player.stats.Bedwars
-                .eight_two_final_deaths_bedwars,
-              playerResponse.data.player.stats.Bedwars
-                .four_three_final_deaths_bedwars,
-              playerResponse.data.player.stats.Bedwars
-                .four_four_final_deaths_bedwars
-            )
-          ),
-          falling_deaths_per_death: safeDiv(
-            playerResponse.data.player.stats.Bedwars.fall_deaths_bedwars,
-            playerResponse.data.player.stats.Bedwars.deaths_bedwars
-          ),
-          is_online: playerStatusResponse.data.session.online,
-          last_login_time: playerResponse.data.player.lastLogin,
-        };
+    for (const member of guildResponse.data.guild.members) {
+        if (TRACKING_UUID_BLACKLIST.includes(member.uuid)) continue;
 
-        datas.push(memberData);
-      }
-    } catch (e) {
-      console.error(e);
+        let playerRequstResponseTime = 0;
+        try {
+            const playerRequestStart = Date.now();
+            const playerResponse = await axios({
+                method: "get",
+                url: "https://api.hypixel.net/v2/player",
+                headers: { "API-Key": HYPIXEL_API_KEY },
+                params: {
+                    uuid: member.uuid,
+                },
+            });
+            playerRequstResponseTime = Date.now() - playerRequestStart;
+
+            if (
+                (playerResponse.data.player.achievements?.bedwars_level &&
+                    !playerResponse.data.player.lastLogin) ||
+                Date.now() - playerResponse.data.player.lastLogin <
+                    1000 * 60 * 60 * 24 * 30
+            ) {
+                const playerStatusRequestStart = Date.now();
+                const playerStatusResponse = await axios({
+                    method: "get",
+                    url: "https://api.hypixel.net/v2/status",
+                    headers: { "API-Key": HYPIXEL_API_KEY },
+                    params: {
+                        uuid: member.uuid,
+                    },
+                });
+
+                await new Promise((resolve) =>
+                    setTimeout(resolve, delay - (Date.now() - playerStatusRequestStart)),
+                );
+
+                const memberData = {
+                    name: playerResponse.data.player.displayname,
+                    uuid: member.uuid,
+                    bedwars_level: playerResponse.data.player.achievements.bedwars_level,
+                    fkdr: safeDiv(
+                        safeAdder(
+                            playerResponse.data.player.stats.Bedwars
+                                .eight_one_final_kills_bedwars,
+                            playerResponse.data.player.stats.Bedwars
+                                .eight_two_final_kills_bedwars,
+                            playerResponse.data.player.stats.Bedwars
+                                .four_three_final_kills_bedwars,
+                            playerResponse.data.player.stats.Bedwars
+                                .four_four_final_kills_bedwars,
+                        ),
+                        safeAdder(
+                            playerResponse.data.player.stats.Bedwars
+                                .eight_one_final_deaths_bedwars,
+                            playerResponse.data.player.stats.Bedwars
+                                .eight_two_final_deaths_bedwars,
+                            playerResponse.data.player.stats.Bedwars
+                                .four_three_final_deaths_bedwars,
+                            playerResponse.data.player.stats.Bedwars
+                                .four_four_final_deaths_bedwars,
+                        ),
+                    ),
+                    falling_deaths_per_death: safeDiv(
+                        playerResponse.data.player.stats.Bedwars.fall_deaths_bedwars,
+                        playerResponse.data.player.stats.Bedwars.deaths_bedwars,
+                    ),
+                    is_online: playerStatusResponse.data.session.online,
+                    last_login_time: playerResponse.data.player.lastLogin,
+                };
+
+                datas.push(memberData);
+            }
+        } catch (e) {
+            console.error(e);
+        }
+        await new Promise((resolve) =>
+            setTimeout(resolve, delay - playerRequstResponseTime),
+        );
     }
-    await new Promise((resolve) => setTimeout(resolve, delay - playerRequstResponseTime));
-  }
 
-  await redisClient.set("memberData", JSON.stringify(datas));
-  await redisClient.set("lastUpdated", Date.now().toString());
+    await redisClient.set("memberData", JSON.stringify(datas));
+    await redisClient.set("lastUpdated", Date.now().toString());
 }
 
 async function scanLoop() {
-  try {
-    await scan();
-  } catch (e) {
-    console.error(e);
-  }
+    try {
+        await scan();
+    } catch (e) {
+        console.error(e);
+    }
 
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-  scanLoop();
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    scanLoop();
 }
 
 client.on("ready", async () => {
-  console.log("ready!");
+    console.log("ready!");
 
-  scanLoop();
+    scanLoop();
 });
 
 const commandsFolderPath = path.join(__dirname, "commands/");
 
 const commands = fs
-  .readdirSync(commandsFolderPath)
-  .map((fileName) => require(path.join(commandsFolderPath, fileName)));
+    .readdirSync(commandsFolderPath)
+    .map((fileName) => require(path.join(commandsFolderPath, fileName)));
 
 const commandsMap = Object.fromEntries(
-  commands.map((command) => [command.name, command.exec])
+    commands.map((command) => [command.name, command.exec]),
 );
 
 client.on("interactionCreate", async (interaction) => {
-  if (!interaction.isChatInputCommand()) return;
+    if (!interaction.isChatInputCommand()) return;
 
-  const commandExec = commandsMap[interaction.commandName];
+    const commandExec = commandsMap[interaction.commandName];
 
-  if (commandExec)
-    return commandExec(interaction, redisClient);
+    if (commandExec) return commandExec(interaction, redisClient);
 });
 
 redisClient.connect().then(() => client.login(DISCORD_BOT_TOKEN));
