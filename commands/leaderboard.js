@@ -26,8 +26,8 @@ module.exports = {
                             1
                         }. [${member.bedwars_level}☆] ${
                             member.name
-                        } (FKDR: ${member.fkdr.toFixed(2)}, Falling Deaths/Death: ${(
-                            member.falling_deaths_per_death * 100
+                        } (FKDR: ${member.fkdr.toFixed(2)}, Void Deaths/Death: ${(
+                            member.void_deaths_per_death * 100
                         ).toFixed(1)}%)`,
                 )
                 .join("\n"),
@@ -41,8 +41,8 @@ module.exports = {
                 { name: "Star", value: "bedwars_level" },
                 { name: "FKDR", value: "fkdr" },
                 {
-                    name: "Falling Deaths/Regular Death",
-                    value: "falling_deaths_per_death",
+                    name: "Void Deaths/Regular Death",
+                    value: "void_deaths_per_death",
                 },
             ),
         )

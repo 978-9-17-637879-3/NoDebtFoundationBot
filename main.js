@@ -115,16 +115,16 @@ async function scan() {
                                 .four_four_final_deaths_bedwars,
                         ),
                     ),
-                    falling_deaths_per_death: safeDiv(
+                    void_deaths_per_death: safeDiv(
                         safeAdder(
                             playerResponse.data.player.stats.Bedwars
-                                .eight_one_fall_deaths_bedwars,
+                                .eight_one_void_deaths_bedwars,
                             playerResponse.data.player.stats.Bedwars
-                                .eight_two_fall_deaths_bedwars,
+                                .eight_two_void_deaths_bedwars,
                             playerResponse.data.player.stats.Bedwars
-                                .four_three_fall_deaths_bedwars,
+                                .four_three_void_deaths_bedwars,
                             playerResponse.data.player.stats.Bedwars
-                                .four_four_fall_deaths_bedwars,
+                                .four_four_void_deaths_bedwars,
                         ),
                         safeAdder(
                             playerResponse.data.player.stats.Bedwars
