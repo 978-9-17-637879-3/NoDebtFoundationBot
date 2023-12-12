@@ -47,7 +47,19 @@ async function scan() {
 
     let guildData = [];
 
-    for (const member of guildResponse.data.guild.members) {
+    const updatingStartTime = Date.now();
+    console.log(`Started update at ${updatingStartTime}`);
+
+    for (let i = 0; i < guildResponse.data.guild.members.length; i++) {
+        if ((i + 1) % 10 == 0)
+            console.log(
+                `${((i / guildResponse.data.guild.members.length) * 100).toFixed(
+                    1,
+                )}% updated`,
+            );
+
+        const member = guildResponse.data.guild.members[i];
+
         if (TRACKING_UUID_BLACKLIST.includes(member.uuid)) continue;
 
         try {
@@ -61,10 +73,10 @@ async function scan() {
             });
 
             if (
-                (playerResponse.data.player.achievements?.bedwars_level &&
-                    !playerResponse.data.player.lastLogin) ||
-                Date.now() - playerResponse.data.player.lastLogin <
-                    1000 * 60 * 60 * 24 * 30
+                playerResponse.data.player.achievements?.bedwars_level &&
+                (!playerResponse.data.player.lastLogin ||
+                    Date.now() - playerResponse.data.player.lastLogin <
+                        1000 * 60 * 60 * 24 * 30)
             ) {
                 const playerStatusResponse = await axios({
                     method: "get",
@@ -104,8 +116,26 @@ async function scan() {
                         ),
                     ),
                     falling_deaths_per_death: safeDiv(
-                        playerResponse.data.player.stats.Bedwars.fall_deaths_bedwars,
-                        playerResponse.data.player.stats.Bedwars.deaths_bedwars,
+                        safeAdder(
+                            playerResponse.data.player.stats.Bedwars
+                                .eight_one_fall_deaths_bedwars,
+                            playerResponse.data.player.stats.Bedwars
+                                .eight_two_fall_deaths_bedwars,
+                            playerResponse.data.player.stats.Bedwars
+                                .four_three_fall_deaths_bedwars,
+                            playerResponse.data.player.stats.Bedwars
+                                .four_four_fall_deaths_bedwars,
+                        ),
+                        safeAdder(
+                            playerResponse.data.player.stats.Bedwars
+                                .eight_one_deaths_bedwars,
+                            playerResponse.data.player.stats.Bedwars
+                                .eight_two_deaths_bedwars,
+                            playerResponse.data.player.stats.Bedwars
+                                .four_three_deaths_bedwars,
+                            playerResponse.data.player.stats.Bedwars
+                                .four_four_deaths_bedwars,
+                        ),
                     ),
                     is_online: playerStatusResponse.data.session.online,
                     last_login_time: playerResponse.data.player.lastLogin,
@@ -136,6 +166,8 @@ async function scan() {
         ],
         status: "online",
     });
+
+    console.log(`Took ${Date.now() - updatingStartTime}ms to update`);
 }
 
 async function scanLoop() {
