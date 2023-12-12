@@ -119,8 +119,20 @@ async function scan() {
 
     await redisClient.set("guildData", JSON.stringify(guildData));
     await redisClient.set("lastUpdated", Date.now().toString());
-    
-    await client.user.setPresence({ activities: [{ name: `, ${guildData.filter(member => member.is_online).length} ${guildData.filter(member => member.is_online).length === 1 ? 'person is' : 'people are'}` }], status: 'online' });
+
+    await client.user.setPresence({
+        activities: [
+            {
+                name: `${guildData.filter((member) => member.is_online).length} ${
+                    guildData.filter((member) => member.is_online).length === 1
+                        ? "person"
+                        : "people"
+                } play`,
+                type: Discord.ActivityType.Watching,
+            },
+        ],
+        status: "online",
+    });
 }
 
 async function scanLoop() {
