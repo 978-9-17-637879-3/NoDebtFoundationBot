@@ -183,6 +183,15 @@ async function scanLoop() {
 
 client.on("ready", async () => {
     console.log("ready!");
+    await client.user.setPresence({
+        activities: [
+            {
+                name: `Bedwars`,
+                type: Discord.ActivityType.Competing,
+            },
+        ],
+        status: "dnd",
+    });
 
     scanLoop();
 });
