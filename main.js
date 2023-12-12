@@ -31,6 +31,8 @@ function safeAdder(...args) {
     return sum;
 }
 
+const sleep = (sleepMs) => new Promise((resolve) => setTimeout(resolve, sleepMs));
+
 async function scan() {
     const guildResponse = await axios({
         method: "get",
@@ -73,7 +75,7 @@ async function scan() {
                     },
                 });
 
-                await new Promise((resolve) => setTimeout(resolve, delay));
+                await sleep(delay);
 
                 const memberData = {
                     name: playerResponse.data.player.displayname,
@@ -114,7 +116,8 @@ async function scan() {
         } catch (e) {
             console.error(e);
         }
-        await new Promise((resolve) => setTimeout(resolve, delay));
+
+        await sleep(delay);
     }
 
     await redisClient.set("guildData", JSON.stringify(guildData));
@@ -142,7 +145,7 @@ async function scanLoop() {
         console.error(e);
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await sleep(1000);
     scanLoop();
 }
 
