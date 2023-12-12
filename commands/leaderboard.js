@@ -3,7 +3,7 @@ const { SlashCommandBuilder } = require("discord.js");
 module.exports = {
     name: "leaderboard",
     exec: async function (interaction, redisClient) {
-        const members = JSON.parse((await redisClient.get("memberData")) ?? "[]");
+        const members = JSON.parse((await redisClient.get("guildData")) ?? "[]");
 
         const direction = interaction.options.get("direction")?.value ?? "forwards";
 

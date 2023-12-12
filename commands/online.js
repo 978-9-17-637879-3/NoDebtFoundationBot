@@ -3,7 +3,7 @@ const { SlashCommandBuilder } = require("discord.js");
 module.exports = {
     name: "online",
     exec: async function (interaction, redisClient) {
-        const members = JSON.parse((await redisClient.get("memberData")) ?? "[]");
+        const members = JSON.parse((await redisClient.get("guildData")) ?? "[]");
         const lastUpdated = Number((await redisClient.get("lastUpdated")) ?? "0");
 
         const membersOnlineString = members

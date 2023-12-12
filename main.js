@@ -43,7 +43,7 @@ async function scan() {
 
     const delay = (DESIRED_REQUESTS_PER_FIVE_MINUTES / 5 / 60) * 1000;
 
-    let datas = [];
+    let guildData = [];
 
     for (const member of guildResponse.data.guild.members) {
         if (TRACKING_UUID_BLACKLIST.includes(member.uuid)) continue;
@@ -109,7 +109,7 @@ async function scan() {
                     last_login_time: playerResponse.data.player.lastLogin,
                 };
 
-                datas.push(memberData);
+                guildData.push(memberData);
             }
         } catch (e) {
             console.error(e);
@@ -117,7 +117,7 @@ async function scan() {
         await new Promise((resolve) => setTimeout(resolve, delay));
     }
 
-    await redisClient.set("memberData", JSON.stringify(datas));
+    await redisClient.set("guildData", JSON.stringify(guildData));
     await redisClient.set("lastUpdated", Date.now().toString());
 }
 
