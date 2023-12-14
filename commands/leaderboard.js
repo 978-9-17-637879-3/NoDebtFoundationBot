@@ -36,7 +36,7 @@ module.exports = {
                         (stat) => stat.value === interaction.options.get("sort").value,
                     ).name
                 }`,
-            );
+            ).setFooter({text:`Generated ${new Date().toString()}`});
 
         for (let i = 0; i < lbMembers.length; i++) {
             const member = lbMembers[i];
