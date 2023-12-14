@@ -28,6 +28,8 @@ module.exports = {
                 direction === "forwards" ? 10 : members.length,
             );
 
+        const lastUpdated = Number((await redisClient.get("lastUpdated")) ?? "0");
+
         const embed = new EmbedBuilder()
             .setColor(0x0099ff)
             .setTitle(
@@ -36,7 +38,12 @@ module.exports = {
                         (stat) => stat.value === interaction.options.get("sort").value,
                     ).name
                 }`,
-            ).setFooter({text:`Generated ${new Date().toString()}`});
+            )
+            .setFooter({
+                text: `Last Updated ${
+                    lastUpdated ? `${Math.floor((Date.now() - lastUpdated) / 1000)} seconds ago` : "Never"
+                }`,
+            });
 
         for (let i = 0; i < lbMembers.length; i++) {
             const member = lbMembers[i];
