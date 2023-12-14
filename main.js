@@ -92,51 +92,76 @@ async function scan() {
                 const memberData = {
                     name: playerResponse.data.player.displayname,
                     uuid: member.uuid,
-                    bedwars_level: playerResponse.data.player.achievements.bedwars_level,
-                    fkdr: safeDiv(
-                        safeAdder(
-                            playerResponse.data.player.stats.Bedwars
-                                .eight_one_final_kills_bedwars,
-                            playerResponse.data.player.stats.Bedwars
-                                .eight_two_final_kills_bedwars,
-                            playerResponse.data.player.stats.Bedwars
-                                .four_three_final_kills_bedwars,
-                            playerResponse.data.player.stats.Bedwars
-                                .four_four_final_kills_bedwars,
+                    stats: {
+                        bedwars_level:
+                            playerResponse.data.player.achievements.bedwars_level,
+                        fkdr: safeDiv(
+                            safeAdder(
+                                playerResponse.data.player.stats.Bedwars
+                                    .eight_one_final_kills_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .eight_two_final_kills_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .four_three_final_kills_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .four_four_final_kills_bedwars,
+                            ),
+                            safeAdder(
+                                playerResponse.data.player.stats.Bedwars
+                                    .eight_one_final_deaths_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .eight_two_final_deaths_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .four_three_final_deaths_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .four_four_final_deaths_bedwars,
+                            ),
                         ),
-                        safeAdder(
-                            playerResponse.data.player.stats.Bedwars
-                                .eight_one_final_deaths_bedwars,
-                            playerResponse.data.player.stats.Bedwars
-                                .eight_two_final_deaths_bedwars,
-                            playerResponse.data.player.stats.Bedwars
-                                .four_three_final_deaths_bedwars,
-                            playerResponse.data.player.stats.Bedwars
-                                .four_four_final_deaths_bedwars,
+                        void_deaths_per_death: safeDiv(
+                            safeAdder(
+                                playerResponse.data.player.stats.Bedwars
+                                    .eight_one_void_deaths_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .eight_two_void_deaths_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .four_three_void_deaths_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .four_four_void_deaths_bedwars,
+                            ),
+                            safeAdder(
+                                playerResponse.data.player.stats.Bedwars
+                                    .eight_one_deaths_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .eight_two_deaths_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .four_three_deaths_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .four_four_deaths_bedwars,
+                            ),
                         ),
-                    ),
-                    void_deaths_per_death: safeDiv(
-                        safeAdder(
-                            playerResponse.data.player.stats.Bedwars
-                                .eight_one_void_deaths_bedwars,
-                            playerResponse.data.player.stats.Bedwars
-                                .eight_two_void_deaths_bedwars,
-                            playerResponse.data.player.stats.Bedwars
-                                .four_three_void_deaths_bedwars,
-                            playerResponse.data.player.stats.Bedwars
-                                .four_four_void_deaths_bedwars,
+                        bblr: safeDiv(
+                            safeAdder(
+                                playerResponse.data.player.stats.Bedwars
+                                    .eight_one_beds_broken_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .eight_two_beds_broken_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .four_three_beds_broken_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .four_four_beds_broken_bedwars,
+                            ),
+                            safeAdder(
+                                playerResponse.data.player.stats.Bedwars
+                                    .eight_one_beds_lost_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .eight_two_beds_lost_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .four_three_beds_lost_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .four_four_beds_lost_bedwars,
+                            ),
                         ),
-                        safeAdder(
-                            playerResponse.data.player.stats.Bedwars
-                                .eight_one_deaths_bedwars,
-                            playerResponse.data.player.stats.Bedwars
-                                .eight_two_deaths_bedwars,
-                            playerResponse.data.player.stats.Bedwars
-                                .four_three_deaths_bedwars,
-                            playerResponse.data.player.stats.Bedwars
-                                .four_four_deaths_bedwars,
-                        ),
-                    ),
+                    },
                     is_online: playerStatusResponse.data.session.online,
                     last_login_time: playerResponse.data.player.lastLogin,
                 };
