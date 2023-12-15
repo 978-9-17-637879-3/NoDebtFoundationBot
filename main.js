@@ -161,6 +161,28 @@ async function scan() {
                                     .four_four_beds_lost_bedwars,
                             ),
                         ),
+                        wlr: safeDiv(
+                            safeAdder(
+                                playerResponse.data.player.stats.Bedwars
+                                    .eight_one_wins_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .eight_two_wins_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .four_three_wins_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .four_four_wins_bedwars,
+                            ),
+                            safeAdder(
+                                playerResponse.data.player.stats.Bedwars
+                                    .eight_one_losses_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .eight_two_losses_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .four_three_losses_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .four_four_losses_bedwars,
+                            ),
+                        ),
                     },
                     is_online: playerStatusResponse.data.session.online,
                     last_login_time: playerResponse.data.player.lastLogin,
