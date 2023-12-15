@@ -8,7 +8,9 @@ const STAT_OPTIONS = [
         percentage: true,
     },
     { name: "Beds Broken/Lost", value: "bblr", ratio: true },
-    {name: "Wins/Losses", value:"wlr", ratio: true}
+    {name: "Wins/Losses", value:"wlr", ratio: true},
+    {name: "Emeralds/Game", value: "emeralds_per_game", ratio: true},
+    {name: "Diamonds/Game", value: "diamonds_per_game", ratio: true}
 ];
 
 module.exports = {

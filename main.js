@@ -185,6 +185,50 @@ async function scan() {
                                     .four_four_losses_bedwars,
                             ),
                         ),
+                        emeralds_per_game: safeDiv(
+                            safeAdder(
+                                playerResponse.data.player.stats.Bedwars
+                                    .eight_one_emerald_resources_collected_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .eight_two_emerald_resources_collected_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .four_three_emerald_resources_collected_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .four_four_emerald_resources_collected_bedwars,
+                            ),
+                            safeAdder(
+                                playerResponse.data.player.stats.Bedwars
+                                    .eight_one_games_played_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .eight_two_games_played_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .four_three_games_played_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .four_four_games_played_bedwars,
+                            ),
+                        ),
+                        diamonds_per_game: safeDiv(
+                            safeAdder(
+                                playerResponse.data.player.stats.Bedwars
+                                    .eight_one_diamond_resources_collected_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .eight_two_diamond_resources_collected_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .four_three_diamond_resources_collected_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .four_four_diamond_resources_collected_bedwars,
+                            ),
+                            safeAdder(
+                                playerResponse.data.player.stats.Bedwars
+                                    .eight_one_games_played_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .eight_two_games_played_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .four_three_games_played_bedwars,
+                                playerResponse.data.player.stats.Bedwars
+                                    .four_four_games_played_bedwars,
+                            ),
+                        ),
                     },
                     is_online: playerStatusResponse.data.session.online,
                     last_login_time: playerResponse.data.player.lastLogin,
@@ -262,9 +306,12 @@ client.on("interactionCreate", async (interaction) => {
     const commandExec = commandsMap[interaction.commandName];
 
     if (!commandExec) return;
-    
-    if (!firstUpdateCompleted) return interaction.reply("chill out lil bro i'm refreshing my data\ni just restarted\ngimme a couple minutes and try again\nif my status says \"Competing in Bedwars\"\ni'm still grinding");
-    
+
+    if (!firstUpdateCompleted)
+        return interaction.reply(
+            "chill out lil bro i'm refreshing my data\ni just restarted\ngimme a couple minutes and try again\nif my status says \"Competing in Bedwars\"\ni'm still grinding",
+        );
+
     commandExec(interaction, redisClient);
 });
 
