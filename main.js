@@ -33,6 +33,8 @@ function safeAdder(...args) {
 
 const sleep = (sleepMs) => new Promise((resolve) => setTimeout(resolve, sleepMs));
 
+let firstUpdateCompleted = false;
+
 async function scan() {
     const guildResponse = await axios({
         method: "get",
@@ -215,6 +217,7 @@ async function scan() {
     });
 
     console.log(`Took ${Date.now() - updatingStartTime}ms to update`);
+    firstUpdateCompleted = true;
 }
 
 async function scanLoop() {
@@ -258,7 +261,11 @@ client.on("interactionCreate", async (interaction) => {
 
     const commandExec = commandsMap[interaction.commandName];
 
-    if (commandExec) return commandExec(interaction, redisClient);
+    if (!commandExec) return;
+    
+    if (!firstUpdateCompleted) return interaction.reply("chill out lil bro i'm refreshing my data\ni just restarted\ngimme a couple minutes and try again\nif my status says \"Competing in Bedwars\"\ni'm still grinding");
+    
+    commandExec(interaction, redisClient);
 });
 
 redisClient.connect().then(() => client.login(DISCORD_BOT_TOKEN));
