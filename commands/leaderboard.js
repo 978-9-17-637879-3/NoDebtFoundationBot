@@ -8,15 +8,24 @@ const STAT_OPTIONS = [
         percentage: true,
     },
     { name: "Beds Broken/Lost", value: "bblr", ratio: true },
-    {name: "Wins/Losses", value:"wlr", ratio: true},
-    {name: "Emeralds/Game", value: "emeralds_per_game", ratio: true},
-    {name: "Diamonds/Game", value: "diamonds_per_game", ratio: true}
+    { name: "Wins/Losses", value: "wlr", ratio: true },
+    { name: "Emeralds/Game", value: "emeralds_per_game", ratio: true },
+    { name: "Diamonds/Game", value: "diamonds_per_game", ratio: true },
 ];
 
 module.exports = {
     name: "leaderboard",
-    exec: async function (interaction, redisClient) {
-        const members = JSON.parse((await redisClient.get("guildData")) ?? "[]");
+    exec: async function (interaction, database) {
+        const guildData = (
+            await database
+                .collection("guildData")
+                .find({})
+                .sort({ updated: -1 })
+                .limit(1)
+                .toArray()
+        )?.[0];
+
+        const members = guildData?.stats ?? [];
 
         const direction = interaction.options.get("direction")?.value ?? "forwards";
 
@@ -31,7 +40,7 @@ module.exports = {
                 direction === "forwards" ? 10 : members.length,
             );
 
-        const lastUpdated = Number((await redisClient.get("lastUpdated")) ?? "0");
+        const lastUpdated = Number(guildData?.updated ?? "0");
 
         const embed = new EmbedBuilder()
             .setColor(0x0099ff)
@@ -44,7 +53,9 @@ module.exports = {
             )
             .setFooter({
                 text: `Last Updated ${
-                    lastUpdated ? `${Math.floor((Date.now() - lastUpdated) / 1000)} seconds ago` : "Never"
+                    lastUpdated
+                        ? `${Math.floor((Date.now() - lastUpdated) / 1000)} seconds ago`
+                        : "Never"
                 }`,
             });
 

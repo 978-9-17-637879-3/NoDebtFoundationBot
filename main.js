@@ -1,6 +1,6 @@
 const axios = require("axios");
 const Discord = require("discord.js");
-const { createClient } = require("redis");
+const { MongoClient } = require("mongodb");
 const path = require("path");
 const fs = require("fs");
 
@@ -8,7 +8,9 @@ const client = new Discord.Client({
     intents: [],
 });
 
-const redisClient = createClient();
+const mongoClient = new MongoClient("mongodb://localhost:27017");
+
+let database;
 
 const {
     HYPIXEL_API_KEY,
@@ -47,7 +49,7 @@ async function scan() {
 
     const delay = (DESIRED_REQUESTS_PER_FIVE_MINUTES / 5 / 60) * 1000;
 
-    let guildData = [];
+    let stats = [];
 
     const updatingStartTime = Date.now();
     console.log(`Started update at ${updatingStartTime}`);
@@ -234,7 +236,7 @@ async function scan() {
                     last_login_time: playerResponse.data.player.lastLogin,
                 };
 
-                guildData.push(memberData);
+                stats.push(memberData);
             }
         } catch (e) {
             console.error(e);
@@ -243,14 +245,13 @@ async function scan() {
         await sleep(delay);
     }
 
-    await redisClient.set("guildData", JSON.stringify(guildData));
-    await redisClient.set("lastUpdated", Date.now().toString());
+    await database.collection("guildData").insertOne({ stats, updated: Date.now() });
 
     await client.user.setPresence({
         activities: [
             {
-                name: `${guildData.filter((member) => member.is_online).length} ${
-                    guildData.filter((member) => member.is_online).length === 1
+                name: `${stats.filter((member) => member.is_online).length} ${
+                    stats.filter((member) => member.is_online).length === 1
                         ? "person"
                         : "people"
                 } play`,
@@ -276,6 +277,8 @@ async function scanLoop() {
 }
 
 client.on("ready", async () => {
+    database = mongoClient.db("nodebtfoundationbot");
+
     console.log("ready!");
     await client.user.setPresence({
         activities: [
@@ -312,7 +315,7 @@ client.on("interactionCreate", async (interaction) => {
             "chill out lil bro i'm refreshing my data\ni just restarted\ngimme a couple minutes and try again\nif my status says \"Competing in Bedwars\"\ni'm still grinding",
         );
 
-    commandExec(interaction, redisClient);
+    commandExec(interaction, database);
 });
 
-redisClient.connect().then(() => client.login(DISCORD_BOT_TOKEN));
+mongoClient.connect().then(() => client.login(DISCORD_BOT_TOKEN));
