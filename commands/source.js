@@ -1,4 +1,5 @@
 const { SlashCommandBuilder } = require("discord.js");
+const { SOURCE_URL } = require("../config.json");
 
 module.exports = {
     name: "source",
