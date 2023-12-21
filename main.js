@@ -323,6 +323,13 @@ client.on("interactionCreate", async (interaction) => {
                 ephemeral: true,
             });
 
+        if (interaction.user.id !== leaderboardData.requesterId) {
+            return interaction.reply({
+                content: "You can only interact with leaderboards you requested!",
+                ephemeral: true,
+            });
+        }
+
         const guildDataAtTimestamp = await database
             .collection("guildData")
             .findOne({ updated: leaderboardData.dataTs });

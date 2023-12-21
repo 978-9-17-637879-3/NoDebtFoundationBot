@@ -30,6 +30,7 @@ module.exports = {
 
         return database.collection("leaderboards").insertOne({
             id: reply.id,
+            requesterId: interaction.user.id,
             dataTs: dataTs,
             stat: interaction.options.get("stat").value,
             firstIdx: FIRST_PLAYER_IDX,
