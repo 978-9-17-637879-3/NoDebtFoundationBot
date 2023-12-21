@@ -62,9 +62,9 @@ async function scan() {
                 )}% updated`,
             );
 
-        const member = guildResponse.data.guild.members[i];
+        const guildMember = guildResponse.data.guild.members[i];
 
-        if (TRACKING_UUID_BLACKLIST.includes(member.uuid)) continue;
+        if (TRACKING_UUID_BLACKLIST.includes(guildMember.uuid)) continue;
 
         try {
             const playerResponse = await axios({
@@ -72,7 +72,7 @@ async function scan() {
                 url: "https://api.hypixel.net/v2/player",
                 headers: { "API-Key": HYPIXEL_API_KEY },
                 params: {
-                    uuid: member.uuid,
+                    uuid: guildMember.uuid,
                 },
             });
 
@@ -87,7 +87,7 @@ async function scan() {
                     url: "https://api.hypixel.net/v2/status",
                     headers: { "API-Key": HYPIXEL_API_KEY },
                     params: {
-                        uuid: member.uuid,
+                        uuid: guildMember.uuid,
                     },
                 });
 
@@ -95,7 +95,7 @@ async function scan() {
 
                 const memberData = {
                     name: playerResponse.data.player.displayname,
-                    uuid: member.uuid,
+                    uuid: guildMember.uuid,
                     stats: {
                         bedwars_level:
                             playerResponse.data.player.achievements.bedwars_level,
@@ -230,6 +230,9 @@ async function scan() {
                                 playerResponse.data.player.stats.Bedwars
                                     .four_four_games_played_bedwars,
                             ),
+                        ),
+                        weekly_guild_experience: safeAdder(
+                            ...Object.values(guildMember.expHistory),
                         ),
                     },
                     is_online: playerStatusResponse.data.session.online,
@@ -410,7 +413,7 @@ client.on("interactionCreate", async (interaction) => {
 
         if (!firstUpdateCompleted)
             return interaction.reply(
-                "Refreshing data, please wait a couple minutes and try again. If my status says \"Competing in Bedwars\", I'm still refreshing data.",
+                'Refreshing data, please wait a couple minutes and try again. If my status says "Competing in Bedwars", I\'m still refreshing data.',
             );
 
         return commandExec(interaction, database);

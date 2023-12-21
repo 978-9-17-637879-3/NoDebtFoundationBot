@@ -3,7 +3,7 @@ const {
     ButtonBuilder,
     ButtonStyle,
     ActionRowBuilder,
-    StringSelectMenuBuilder
+    StringSelectMenuBuilder,
 } = require("discord.js");
 
 const STAT_OPTIONS = [
@@ -18,6 +18,7 @@ const STAT_OPTIONS = [
     { name: "Wins/Losses", value: "wlr", ratio: true },
     { name: "Emeralds/Game", value: "emeralds_per_game", ratio: true },
     { name: "Diamonds/Game", value: "diamonds_per_game", ratio: true },
+    { name: "Weekly GEXP", value: "weekly_guild_experience" },
 ];
 
 module.exports.STAT_OPTIONS = STAT_OPTIONS;
@@ -70,7 +71,10 @@ module.exports.generateLeaderboard = async (first, last, stat, guildData, dataTs
         .setCustomId("statsDropdown")
         .setPlaceholder(STAT_OPTIONS.find((statOption) => statOption.value === stat).name)
         .addOptions(
-            ...STAT_OPTIONS.map(statOption => ({label: statOption.name, value: statOption.value}))
+            ...STAT_OPTIONS.map((statOption) => ({
+                label: statOption.name,
+                value: statOption.value,
+            })),
         );
 
     const firstButton = new ButtonBuilder()
