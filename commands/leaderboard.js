@@ -17,12 +17,13 @@ module.exports = {
         )[0];
 
         const dataTs = Number(guildData?.updated ?? "0");
+        const stat = interaction.options.get("stat")?.value ?? "star";
 
         const reply = await interaction.reply(
             Object.assign({}, await generateLeaderboard(
                 FIRST_PLAYER_IDX,
                 LAST_PLAYER_IDX,
-                interaction.options.get("stat")?.value ?? "star",
+                stat,
                 guildData,
                 dataTs,
             ), {fetchReply: true}),
@@ -32,7 +33,7 @@ module.exports = {
             id: reply.id,
             requesterId: interaction.user.id,
             dataTs: dataTs,
-            stat: interaction.options.get("stat").value,
+            stat: stat,
             firstIdx: FIRST_PLAYER_IDX,
             lastIdx: LAST_PLAYER_IDX,
         });
