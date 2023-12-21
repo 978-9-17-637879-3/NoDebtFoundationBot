@@ -7,7 +7,7 @@ const {
 } = require("discord.js");
 
 const STAT_OPTIONS = [
-    { name: "Star", value: "bedwars_level" },
+    { name: "Bedwars Level", value: "bedwars_level" },
     { name: "FKDR", value: "fkdr", ratio: true },
     {
         name: "Void Deaths/Regular Death",
@@ -48,7 +48,7 @@ module.exports.generateLeaderboard = async (first, last, stat, guildData, dataTs
         const member = lbMembers[i];
         embed.addFields({
             name: `${first + i + 1}. [${member.stats.bedwars_level}☆] ${member.name}`,
-            value: STAT_OPTIONS.filter((stat) => stat.name != "Star")
+            value: STAT_OPTIONS.filter((stat) => stat.value != "bedwars_level")
                 .map((stat) => {
                     let statString = `${stat.name}: `;
 
