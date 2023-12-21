@@ -410,7 +410,7 @@ client.on("interactionCreate", async (interaction) => {
 
         if (!firstUpdateCompleted)
             return interaction.reply(
-                "chill out lil bro i'm refreshing my data\ni just restarted\ngimme a couple minutes and try again\nif my status says \"Competing in Bedwars\"\ni'm still grinding",
+                "Refreshing data, please wait a couple minutes and try again. If my status says \"Competing in Bedwars\", I'm still refreshing data.",
             );
 
         return commandExec(interaction, database);
