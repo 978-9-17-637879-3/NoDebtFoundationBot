@@ -16,7 +16,7 @@ module.exports = {
                 .toArray()
         )[0];
 
-        const dataTs = Number(guildData?.updated ?? "0");
+        const dataTs = guildData?.updated ?? 0;
         const stat = interaction.options.get("stat")?.value ?? "bedwars_level";
 
         const reply = await interaction.reply(

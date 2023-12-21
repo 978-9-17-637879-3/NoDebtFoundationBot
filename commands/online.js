@@ -13,7 +13,7 @@ module.exports = {
         )[0];
 
         const members = guildData?.stats ?? [];
-        const lastUpdated = Number(guildData?.updated ?? "0");
+        const lastUpdated = guildData?.updated ?? 0;
 
         const membersOnlineString = members
             .filter((member) => member.is_online)
