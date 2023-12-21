@@ -10,7 +10,7 @@ module.exports = {
                 .sort({ updated: -1 })
                 .limit(1)
                 .toArray()
-        )?.[0];
+        )[0];
         
         const members = guildData?.stats ?? [];
         const lastUpdated = Number(guildData?.updated ?? "0");

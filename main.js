@@ -303,19 +303,111 @@ const commandsMap = Object.fromEntries(
     commands.map((command) => [command.name, command.exec]),
 );
 
+const { generateLeaderboard } = require("./leaderboardUtils");
+
 client.on("interactionCreate", async (interaction) => {
-    if (!interaction.isChatInputCommand()) return;
+    if (interaction.isButton() || interaction.isStringSelectMenu()) {
+        if (
+            !["first", "prev", "next", "last"].includes(interaction.customId) &&
+            interaction.customId !== "statsDropdown"
+        )
+            return;
 
-    const commandExec = commandsMap[interaction.commandName];
+        const leaderboardData = await database
+            .collection("leaderboards")
+            .findOne({ id: interaction.message.id });
 
-    if (!commandExec) return;
+        if (!leaderboardData)
+            return interaction.reply({
+                content: "Leaderboard message could not be found.",
+                ephemeral: true,
+            });
 
-    if (!firstUpdateCompleted)
-        return interaction.reply(
-            "chill out lil bro i'm refreshing my data\ni just restarted\ngimme a couple minutes and try again\nif my status says \"Competing in Bedwars\"\ni'm still grinding",
+        const guildDataAtTimestamp = await database
+            .collection("guildData")
+            .findOne({ updated: leaderboardData.dataTs });
+
+        if (!guildDataAtTimestamp)
+            return interaction.reply({
+                content: "Data for that leaderboard could not be found.",
+                ephemeral: true,
+            });
+
+        let newStat = leaderboardData.stat;
+        let newFirstIdx = leaderboardData.firstIdx;
+        let newLastIdx = leaderboardData.lastIdx;
+
+        if (interaction.isStringSelectMenu()) {
+            newStat = interaction.values[0];
+        } else if (interaction.isButton()) {
+            const veryFirstFirstIdx = 0;
+            const veryFirstLastIdx = 10;
+            const veryLastFirstIdx = Math.max(
+                0,
+                Math.floor(guildDataAtTimestamp.stats.length / 10) * 10,
+            );
+            const veryLastLastIdx = guildDataAtTimestamp.stats.length;
+
+            switch (interaction.customId) {
+                case "first":
+                    newFirstIdx = veryFirstFirstIdx;
+                    newLastIdx = veryFirstLastIdx;
+                    break;
+                case "prev":
+                    newFirstIdx = Math.max(
+                        veryFirstFirstIdx,
+                        leaderboardData.firstIdx - 10,
+                    );
+                    newLastIdx = Math.max(
+                        veryFirstLastIdx,
+                        Math.min(
+                            leaderboardData.firstIdx,
+                            guildDataAtTimestamp.stats.length,
+                        ),
+                    );
+                    break;
+                case "next":
+                    newFirstIdx = Math.min(
+                        leaderboardData.firstIdx + 10,
+                        veryLastFirstIdx,
+                    );
+                    newLastIdx = Math.min(leaderboardData.lastIdx + 10, veryLastLastIdx);
+                    break;
+                case "last":
+                    newFirstIdx = veryLastFirstIdx;
+                    newLastIdx = veryLastLastIdx;
+                    break;
+            }
+        }
+
+        await interaction.update(
+            await generateLeaderboard(
+                newFirstIdx,
+                newLastIdx,
+                newStat,
+                guildDataAtTimestamp,
+                leaderboardData.dataTs,
+            ),
         );
 
-    commandExec(interaction, database);
+        return database
+            .collection("leaderboards")
+            .updateOne(
+                { id: interaction.message.id },
+                { $set: { stat: newStat, firstIdx: newFirstIdx, lastIdx: newLastIdx } },
+            );
+    } else if (interaction.isChatInputCommand()) {
+        const commandExec = commandsMap[interaction.commandName];
+
+        if (!commandExec) return;
+
+        if (!firstUpdateCompleted)
+            return interaction.reply(
+                "chill out lil bro i'm refreshing my data\ni just restarted\ngimme a couple minutes and try again\nif my status says \"Competing in Bedwars\"\ni'm still grinding",
+            );
+
+        return commandExec(interaction, database);
+    }
 });
 
 mongoClient.connect().then(() => client.login(DISCORD_BOT_TOKEN));
