@@ -11,7 +11,7 @@ module.exports = {
                 .limit(1)
                 .toArray()
         )[0];
-        
+
         const members = guildData?.stats ?? [];
         const lastUpdated = Number(guildData?.updated ?? "0");
 

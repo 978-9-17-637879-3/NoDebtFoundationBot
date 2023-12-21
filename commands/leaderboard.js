@@ -20,13 +20,17 @@ module.exports = {
         const stat = interaction.options.get("stat")?.value ?? "star";
 
         const reply = await interaction.reply(
-            Object.assign({}, await generateLeaderboard(
-                FIRST_PLAYER_IDX,
-                LAST_PLAYER_IDX,
-                stat,
-                guildData,
-                dataTs,
-            ), {fetchReply: true}),
+            Object.assign(
+                {},
+                await generateLeaderboard(
+                    FIRST_PLAYER_IDX,
+                    LAST_PLAYER_IDX,
+                    stat,
+                    guildData,
+                    dataTs,
+                ),
+                { fetchReply: true },
+            ),
         );
 
         return database.collection("leaderboards").insertOne({
