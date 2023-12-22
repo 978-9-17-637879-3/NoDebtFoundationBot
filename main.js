@@ -331,7 +331,7 @@ const { generateLeaderboard } = require("./leaderboardUtils");
 client.on("interactionCreate", async (interaction) => {
     if (interaction.isButton() || interaction.isStringSelectMenu()) {
         if (
-            !["first", "prev", "next", "last"].includes(interaction.customId) &&
+            !["first", "prev", "next", "last", "delete"].includes(interaction.customId) &&
             interaction.customId !== "statsDropdown"
         )
             return;
@@ -351,6 +351,11 @@ client.on("interactionCreate", async (interaction) => {
                 content: "You can only interact with leaderboards you requested!",
                 ephemeral: true,
             });
+        }
+
+        if (interaction.customId === "delete") {
+            await client.channels.fetch(interaction.channelId); // channel that message was in must be cached for the message to be deleted.
+            return interaction.message.delete();
         }
 
         const guildDataAtTimestamp = await database

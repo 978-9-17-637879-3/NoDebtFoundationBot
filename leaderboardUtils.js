@@ -47,7 +47,7 @@ module.exports.generateLeaderboard = async (
     let lbMembers = members.sort((a, b) => b.stats[statValue] - a.stats[statValue]);
 
     const stat = STAT_OPTIONS.find((statOption) => statOption.value === statValue);
-    
+
     if (stat.reverse) lbMembers.reverse();
     lbMembers = lbMembers.slice(first, last);
 
@@ -114,6 +114,12 @@ module.exports.generateLeaderboard = async (
         .setStyle(ButtonStyle.Primary)
         .setEmoji("⏭️");
 
+    const deleteButton = new ButtonBuilder()
+        .setCustomId("delete")
+        .setLabel("Delete")
+        .setStyle(ButtonStyle.Danger)
+        .setEmoji("🗑️");
+
     const dropdownRow = new ActionRowBuilder().addComponents(statsDropdown);
 
     const buttonsRow = new ActionRowBuilder().addComponents(
@@ -121,6 +127,7 @@ module.exports.generateLeaderboard = async (
         prevButton,
         nextButton,
         lastButton,
+        deleteButton,
     );
 
     return {
