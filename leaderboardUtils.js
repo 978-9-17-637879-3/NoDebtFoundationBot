@@ -13,30 +13,47 @@ const STAT_OPTIONS = [
         name: "Void Deaths/Regular Death",
         value: "void_deaths_per_death",
         percentage: true,
+        reverse: true,
     },
     { name: "Beds Broken/Lost", value: "bblr", ratio: true },
     { name: "Wins/Losses", value: "wlr", ratio: true },
     { name: "Emeralds/Game", value: "emeralds_per_game", ratio: true },
     { name: "Diamonds/Game", value: "diamonds_per_game", ratio: true },
     { name: "Weekly GEXP", value: "weekly_guild_experience" },
+    { name: "Average Rank", value: "average_rank", ratio: true, reverse: true },
 ];
 
 module.exports.STAT_OPTIONS = STAT_OPTIONS;
 
-module.exports.generateLeaderboard = async (first, last, stat, guildData, dataTs) => {
+module.exports.renderStatValueString = (memberData, stat) => {
+    if (stat.ratio) {
+        return memberData.stats[stat.value].toFixed(2);
+    } else if (stat.percentage) {
+        return (memberData.stats[stat.value] * 100).toFixed(1) + "%";
+    } else {
+        return memberData.stats[stat.value];
+    }
+};
+
+module.exports.generateLeaderboard = async (
+    first,
+    last,
+    statValue,
+    guildData,
+    dataTs,
+) => {
     const members = guildData?.stats ?? [];
 
-    const lbMembers = members
-        .sort((a, b) => b.stats[stat] - a.stats[stat])
-        .slice(first, last);
+    let lbMembers = members.sort((a, b) => b.stats[statValue] - a.stats[statValue]);
+
+    const stat = STAT_OPTIONS.find((statOption) => statOption.value === statValue);
+    
+    if (stat.reverse) lbMembers.reverse();
+    lbMembers = lbMembers.slice(first, last);
 
     const embed = new EmbedBuilder()
         .setColor(0x0099ff)
-        .setTitle(
-            `${
-                STAT_OPTIONS.find((statOption) => statOption.value === stat).name
-            } Leaderboard`,
-        )
+        .setTitle(`${stat.name} Leaderboard`)
         .setFooter({
             text: `Last Updated ${
                 dataTs
@@ -50,26 +67,22 @@ module.exports.generateLeaderboard = async (first, last, stat, guildData, dataTs
         embed.addFields({
             name: `${first + i + 1}. [${member.stats.bedwars_level}☆] ${member.name}`,
             value: STAT_OPTIONS.filter((stat) => stat.value != "bedwars_level")
-                .map((stat) => {
-                    let statString = `${stat.name}: `;
-
-                    if (stat.ratio) {
-                        statString += member.stats[stat.value].toFixed(2);
-                    } else if (stat.percentage) {
-                        statString += (member.stats[stat.value] * 100).toFixed(1) + "%";
-                    } else {
-                        statString += member.stats[stat.value];
-                    }
-
-                    return statString;
-                })
+                .map(
+                    (stat) =>
+                        `${stat.name}: ${module.exports.renderStatValueString(
+                            member,
+                            stat,
+                        )}`,
+                )
                 .join(", "),
         });
     }
 
     const statsDropdown = new StringSelectMenuBuilder()
         .setCustomId("statsDropdown")
-        .setPlaceholder(STAT_OPTIONS.find((statOption) => statOption.value === stat).name)
+        .setPlaceholder(
+            STAT_OPTIONS.find((statOption) => statOption.value === statValue).name,
+        )
         .addOptions(
             ...STAT_OPTIONS.map((statOption) => ({
                 label: statOption.name,

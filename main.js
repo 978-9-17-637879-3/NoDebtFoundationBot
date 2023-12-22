@@ -37,6 +37,8 @@ const sleep = (sleepMs) => new Promise((resolve) => setTimeout(resolve, sleepMs)
 
 let firstUpdateCompleted = false;
 
+const { STAT_OPTIONS } = require("./leaderboardUtils");
+
 async function scan() {
     const guildResponse = await axios({
         method: "get",
@@ -237,6 +239,7 @@ async function scan() {
                     },
                     is_online: playerStatusResponse.data.session.online,
                     last_login_time: playerResponse.data.player.lastLogin,
+                    rankSum: 0,
                 };
 
                 stats.push(memberData);
@@ -246,6 +249,23 @@ async function scan() {
         }
 
         await sleep(delay);
+    }
+
+    for (const statOption of STAT_OPTIONS) {
+        if (statOption.value === "average_rank") continue;
+
+        for (let i = 0; i < stats.length; i++) {
+            stats[i].rankSum +=
+                stats
+                    .slice() // copies array so that sort doesn't mutate
+                    .sort((a, b) => b.stats[statOption.value] - a.stats[statOption.value])
+                    .findIndex((member) => member.uuid === stats[i].uuid) + 1;
+        }
+    }
+
+    for (let i = 0; i < stats.length; i++) {
+        stats[i].stats.average_rank = safeDiv(stats[i].rankSum, STAT_OPTIONS.length - 1);
+        delete stats[i].rankSum;
     }
 
     await database.collection("guildData").insertOne({ stats, updated: Date.now() });
