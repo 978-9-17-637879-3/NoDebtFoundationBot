@@ -121,11 +121,6 @@ module.exports = async (interaction, client, database) => {
 
         if (!commandExec) return;
 
-        if (!firstUpdateCompleted)
-            return interaction.reply(
-                'Refreshing data, please wait a couple minutes and try again. If my status says "Competing in Bedwars", I\'m still refreshing data.',
-            );
-
         return commandExec(interaction, database);
     }
 };
