@@ -160,15 +160,14 @@ class Scanner {
         for (const statOption of STAT_OPTIONS) {
             if (statOption.value === "average_rank") continue;
 
+            const sortedStatsCopy = stats
+                .slice() // copies array so that sort doesn't mutate
+                .sort((a, b) => b.stats[statOption.value] - a.stats[statOption.value]);
+
             for (let i = 0; i < stats.length; i++) {
                 stats[i].rankSum +=
-                    stats
-                        .slice() // copies array so that sort doesn't mutate
-                        .sort(
-                            (a, b) =>
-                                b.stats[statOption.value] - a.stats[statOption.value],
-                        )
-                        .findIndex((member) => member.uuid === stats[i].uuid) + 1;
+                    sortedStatsCopy.findIndex((member) => member.uuid === stats[i].uuid) +
+                    1;
             }
         }
 
