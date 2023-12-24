@@ -160,9 +160,12 @@ class Scanner {
         for (const statOption of STAT_OPTIONS) {
             if (statOption.value === "average_rank") continue;
 
-            const sortedStatsCopy = stats
+            let sortedStatsCopy = stats
                 .slice() // copies array so that sort doesn't mutate
                 .sort((a, b) => b.stats[statOption.value] - a.stats[statOption.value]);
+            
+            if (statOption.reverse)
+                sortedStatsCopy.reverse();
 
             for (let i = 0; i < stats.length; i++) {
                 stats[i].rankSum +=
