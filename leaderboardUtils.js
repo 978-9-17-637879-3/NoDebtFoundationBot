@@ -27,11 +27,11 @@ module.exports.STAT_OPTIONS = STAT_OPTIONS;
 
 module.exports.renderStatValueString = (memberData, stat) => {
     if (stat.ratio) {
-        return memberData.stats[stat.value].toFixed(2);
+        return memberData.stats[stat.value].num.toFixed(2);
     } else if (stat.percentage) {
-        return (memberData.stats[stat.value] * 100).toFixed(1) + "%";
+        return (memberData.stats[stat.value].num * 100).toFixed(1) + "%";
     } else {
-        return memberData.stats[stat.value];
+        return memberData.stats[stat.value].num;
     }
 };
 
@@ -44,7 +44,9 @@ module.exports.generateLeaderboard = async (
 ) => {
     const members = guildData?.stats ?? [];
 
-    let lbMembers = members.sort((a, b) => b.stats[statValue] - a.stats[statValue]);
+    let lbMembers = members.sort(
+        (a, b) => b.stats[statValue].num - a.stats[statValue].num,
+    );
 
     const stat = STAT_OPTIONS.find((statOption) => statOption.value === statValue);
 
@@ -65,7 +67,7 @@ module.exports.generateLeaderboard = async (
     for (let i = 0; i < lbMembers.length; i++) {
         const member = lbMembers[i];
         embed.addFields({
-            name: `${first + i + 1}. [${member.stats.bedwars_level}☆] ${member.name}`,
+            name: `${first + i + 1}. [${member.stats.bedwars_level.num}☆] ${member.name}`,
             value: STAT_OPTIONS.filter((stat) => stat.value != "bedwars_level")
                 .map(
                     (stat) =>

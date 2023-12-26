@@ -106,7 +106,7 @@ module.exports = {
 
         for (const statOption of STAT_OPTIONS) {
             let stats = guildData.stats.sort(
-                (a, b) => b.stats[statOption.value] - a.stats[statOption.value],
+                (a, b) => b.stats[statOption.value].num - a.stats[statOption.value].num,
             );
 
             if (statOption.reverse) stats.reverse();

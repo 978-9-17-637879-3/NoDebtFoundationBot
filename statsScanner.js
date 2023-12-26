@@ -25,21 +25,24 @@ function safeAdder(...args) {
     return sum;
 }
 
+function bedwarsStat(data, key) {
+    return data["player"]["stats"]["Bedwars"][key];
+}
+
 function bedwarsRatio(data, numeratorKey, denominatorKey) {
-    return safeDiv(
-        safeAdder(
-            data["player"]["stats"]["Bedwars"][`eight_one_${numeratorKey}_bedwars`],
-            data["player"]["stats"]["Bedwars"][`eight_two_${numeratorKey}_bedwars`],
-            data["player"]["stats"]["Bedwars"][`four_three_${numeratorKey}_bedwars`],
-            data["player"]["stats"]["Bedwars"][`four_four_${numeratorKey}_bedwars`],
-        ),
-        safeAdder(
-            data["player"]["stats"]["Bedwars"][`eight_one_${denominatorKey}_bedwars`],
-            data["player"]["stats"]["Bedwars"][`eight_two_${denominatorKey}_bedwars`],
-            data["player"]["stats"]["Bedwars"][`four_three_${denominatorKey}_bedwars`],
-            data["player"]["stats"]["Bedwars"][`four_four_${denominatorKey}_bedwars`],
-        ),
+    const numerator = safeAdder(
+        bedwarsStat(data, `eight_one_${numeratorKey}_bedwars`),
+        bedwarsStat(data, `eight_two_${numeratorKey}_bedwars`),
+        bedwarsStat(data, `four_three_${numeratorKey}_bedwars`),
+        bedwarsStat(data, `four_four_${numeratorKey}_bedwars`),
     );
+    const denominator = safeAdder(
+        bedwarsStat(data, `eight_one_${denominatorKey}_bedwars`),
+        bedwarsStat(data, `eight_two_${denominatorKey}_bedwars`),
+        bedwarsStat(data, `four_three_${denominatorKey}_bedwars`),
+        bedwarsStat(data, `four_four_${denominatorKey}_bedwars`),
+    );
+    return { numerator, denominator, num: safeDiv(numerator, denominator) };
 }
 
 class Scanner {
@@ -109,10 +112,11 @@ class Scanner {
                         name: playerResponse.data["player"]["displayname"],
                         uuid: guildMember["uuid"],
                         stats: {
-                            bedwars_level:
-                                playerResponse.data["player"]["achievements"][
+                            bedwars_level: {
+                                num: playerResponse.data["player"]["achievements"][
                                     "bedwars_level"
                                 ],
+                            },
                             fkdr: bedwarsRatio(
                                 playerResponse.data,
                                 "final_kills",
@@ -139,9 +143,11 @@ class Scanner {
                                 "diamond_resources_collected",
                                 "games_played",
                             ),
-                            weekly_guild_experience: safeAdder(
-                                ...Object.values(guildMember["expHistory"]),
-                            ),
+                            weekly_guild_experience: {
+                                num: safeAdder(
+                                    ...Object.values(guildMember["expHistory"]),
+                                ),
+                            },
                         },
                         is_online: playerStatusResponse.data["session"]["online"],
                         last_login_time: playerResponse.data["player"]["lastLogin"],
@@ -162,10 +168,12 @@ class Scanner {
 
             let sortedStatsCopy = stats
                 .slice() // copies array so that sort doesn't mutate
-                .sort((a, b) => b.stats[statOption.value] - a.stats[statOption.value]);
-            
-            if (statOption.reverse)
-                sortedStatsCopy.reverse();
+                .sort(
+                    (a, b) =>
+                        b.stats[statOption.value].num - a.stats[statOption.value].num,
+                );
+
+            if (statOption.reverse) sortedStatsCopy.reverse();
 
             for (let i = 0; i < stats.length; i++) {
                 stats[i].rankSum +=
@@ -175,10 +183,11 @@ class Scanner {
         }
 
         for (let i = 0; i < stats.length; i++) {
-            stats[i].stats.average_rank = safeDiv(
-                stats[i].rankSum,
-                STAT_OPTIONS.length - 1,
-            );
+            stats[i].stats.average_rank = {
+                numerator: stats[i].rankSum,
+                denominator: STAT_OPTIONS.length - 1,
+                num: safeDiv(stats[i].rankSum, STAT_OPTIONS.length - 1),
+            };
             delete stats[i].rankSum;
         }
 
