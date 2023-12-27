@@ -41,7 +41,7 @@ module.exports.generateLeaderboard = async (
     statValue,
     guildData,
     dataTs,
-    tracked = false,
+    since_tracking,
 ) => {
     const members = guildData?.members ?? [];
 
@@ -55,8 +55,8 @@ module.exports.generateLeaderboard = async (
     lbMembers = lbMembers.slice(first, last);
 
     const embed = new EmbedBuilder()
-        .setColor(tracked ? 0x00ff099 : 0x0099ff)
-        .setTitle(`${stat.name} Leaderboard${tracked ? " Since Tracking" : ""}`)
+        .setColor(since_tracking ? 0x00ff099 : 0x0099ff)
+        .setTitle(`${stat.name} Leaderboard${since_tracking ? " Since Tracking" : ""}`)
         .setFooter({
             text: `Last Updated ${
                 dataTs

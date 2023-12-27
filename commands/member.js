@@ -1,5 +1,9 @@
 const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } = require("discord.js");
-const { STAT_OPTIONS, renderStatValueString } = require("../leaderboardUtils");
+const {
+    STAT_OPTIONS,
+    renderStatValueString,
+    simulateData,
+} = require("../leaderboardUtils");
 const axios = require("axios");
 const sharp = require("sharp");
 
@@ -48,28 +52,32 @@ async function generateMinecraftFaceImageBuffer(uuid) {
 module.exports = {
     name: "member",
     exec: async function (interaction, database) {
-        const currentData = (
-            await database
-                .collection("guildData")
-                .find({})
-                .sort({ updated: -1 })
-                .limit(1)
-                .toArray()
-        )[0];
+        const since_tracking = interaction.options.get("since_tracking")?.value;
 
-        if (!currentData)
+        const data = since_tracking
+            ? await simulateData(database)
+            : (
+                  await database
+                      .collection("guildData")
+                      .find({})
+                      .sort({ updated: -1 })
+                      .limit(1)
+                      .toArray()
+              )[0];
+
+        if (!data)
             return interaction.reply({
                 content: "No guild data found!",
                 ephemeral: true,
             });
 
-        const dataTs = currentData?.updated ?? 0;
+        const dataTs = data?.updated ?? 0;
 
         let memberData;
 
         const usernameArgument = interaction.options.get("username")?.value;
         if (usernameArgument) {
-            memberData = currentData?.members?.find(
+            memberData = data?.members?.find(
                 (member) => member.name.toUpperCase() === usernameArgument.toUpperCase(),
             );
         } else {
@@ -84,7 +92,7 @@ module.exports = {
                     ephemeral: true,
                 });
 
-            memberData = currentData?.members?.find((member) => member.uuid === uuid);
+            memberData = data?.members?.find((member) => member.uuid === uuid);
         }
 
         if (!memberData)
@@ -94,8 +102,10 @@ module.exports = {
             });
 
         const embed = new EmbedBuilder()
-            .setColor(0x0099ff)
-            .setTitle(`${memberData.name}'s Stats`)
+            .setColor(since_tracking ? 0x00ff099 : 0x0099ff)
+            .setTitle(
+                `${memberData.name}'s Stats${since_tracking ? " Since Tracking" : ""}`,
+            )
             .setFooter({
                 text: `Last Updated ${
                     dataTs
@@ -105,7 +115,7 @@ module.exports = {
             });
 
         for (const statOption of STAT_OPTIONS) {
-            let members = currentData.members.sort(
+            let members = data.members.sort(
                 (a, b) => b.stats[statOption.value].num - a.stats[statOption.value].num,
             );
 
@@ -140,5 +150,12 @@ module.exports = {
         .setDescription("check stats of a specific member")
         .addStringOption((option) =>
             option.setName("username").setDescription("username you want to check"),
+        )
+        .addBooleanOption((option) =>
+            option
+                .setName("since_tracking")
+                .setDescription(
+                    "start stats from when the bot started tracking you, instead of all time",
+                ),
         ),
 };

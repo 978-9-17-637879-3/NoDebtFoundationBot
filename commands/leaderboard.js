@@ -1,5 +1,9 @@
 const { SlashCommandBuilder } = require("discord.js");
-const { generateLeaderboard, STAT_OPTIONS } = require("../leaderboardUtils");
+const {
+    generateLeaderboard,
+    STAT_OPTIONS,
+    simulateData,
+} = require("../leaderboardUtils");
 
 const FIRST_PLAYER_IDX = 0;
 const LAST_PLAYER_IDX = 10;
@@ -7,16 +11,20 @@ const LAST_PLAYER_IDX = 10;
 module.exports = {
     name: "leaderboard",
     exec: async function (interaction, database) {
-        const guildData = (
-            await database
-                .collection("guildData")
-                .find({})
-                .sort({ updated: -1 })
-                .limit(1)
-                .toArray()
-        )[0];
+        const since_tracking = interaction.options.get("since_tracking")?.value;
 
-        const dataTs = guildData?.updated ?? 0;
+        const data = since_tracking
+            ? await simulateData(database)
+            : (
+                  await database
+                      .collection("guildData")
+                      .find({})
+                      .sort({ updated: -1 })
+                      .limit(1)
+                      .toArray()
+              )[0];
+
+        const dataTs = data?.updated ?? 0;
         const stat = interaction.options.get("stat")?.value ?? "bedwars_level";
 
         const reply = await interaction.reply(
@@ -26,8 +34,9 @@ module.exports = {
                     FIRST_PLAYER_IDX,
                     LAST_PLAYER_IDX,
                     stat,
-                    guildData,
+                    data,
                     dataTs,
+                    since_tracking,
                 ),
                 { fetchReply: true },
             ),
@@ -40,6 +49,7 @@ module.exports = {
             stat: stat,
             firstIdx: FIRST_PLAYER_IDX,
             lastIdx: LAST_PLAYER_IDX,
+            since_tracking: since_tracking,
         });
     },
     commandData: new SlashCommandBuilder()
@@ -52,5 +62,12 @@ module.exports = {
                 .setName("stat")
                 .setDescription("statistic to sort by")
                 .addChoices(...STAT_OPTIONS),
+        )
+        .addBooleanOption((option) =>
+            option
+                .setName("since_tracking")
+                .setDescription(
+                    "start stats from when the bot started tracking you, instead of all time",
+                ),
         ),
 };

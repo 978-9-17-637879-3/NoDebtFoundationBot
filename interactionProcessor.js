@@ -43,7 +43,7 @@ module.exports = async (interaction, client, database) => {
             return interaction.message.delete();
         }
 
-        const guildData = leaderboardData.tracked
+        const guildData = leaderboardData.since_tracking
             ? await simulateData(database, leaderboardData.dataTs)
             : await database
                   .collection("guildData")
@@ -106,6 +106,7 @@ module.exports = async (interaction, client, database) => {
                 newStat,
                 guildData,
                 leaderboardData.dataTs,
+                leaderboardData.since_tracking
             ),
         );
 
