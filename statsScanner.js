@@ -1,7 +1,7 @@
 const axios = require("axios");
 const { ActivityType } = require("discord.js");
 
-const { STAT_OPTIONS } = require("./leaderboardUtils");
+const { processRanks, safeDiv, safeAdder } = require("./leaderboardUtils");
 
 const {
     HYPIXEL_API_KEY,
@@ -14,18 +14,6 @@ const {
 const sleep = (sleepMs) => new Promise((resolve) => setTimeout(resolve, sleepMs));
 
 const DESIRED_REQUESTS_PER_FIVE_MINUTES = 290;
-
-function safeDiv(a, b) {
-    return (a ?? 0) / ((b ?? 0) === 0 ? 1 : b);
-}
-
-function safeAdder(...args) {
-    let sum = 0;
-    for (const arg of args) {
-        sum += arg ?? 0;
-    }
-    return sum;
-}
 
 function bedwarsStat(data, key) {
     return data["player"]["stats"]["Bedwars"][key];
@@ -65,7 +53,7 @@ class Scanner {
 
         const delay = (DESIRED_REQUESTS_PER_FIVE_MINUTES / 5 / 60) * 1000;
 
-        let stats = [];
+        let members = [];
 
         const updatingStartTime = Date.now();
         console.log(`Started update at ${updatingStartTime}`);
@@ -153,10 +141,9 @@ class Scanner {
                         },
                         is_online: playerStatusResponse.data["session"]["online"],
                         last_login_time: playerResponse.data["player"]["lastLogin"],
-                        rankSum: 0,
                     };
 
-                    stats.push(memberData);
+                    members.push(memberData);
                 }
             } catch (e) {
                 console.error(e);
@@ -165,43 +152,17 @@ class Scanner {
             await sleep(delay);
         }
 
-        for (const statOption of STAT_OPTIONS) {
-            if (statOption.value === "average_rank") continue;
-
-            let sortedStatsCopy = stats
-                .slice() // copies array so that sort doesn't mutate
-                .sort(
-                    (a, b) =>
-                        b.stats[statOption.value].num - a.stats[statOption.value].num,
-                );
-
-            if (statOption.reverse) sortedStatsCopy.reverse();
-
-            for (let i = 0; i < stats.length; i++) {
-                stats[i].rankSum +=
-                    sortedStatsCopy.findIndex((member) => member.uuid === stats[i].uuid) +
-                    1;
-            }
-        }
-
-        for (let i = 0; i < stats.length; i++) {
-            stats[i].stats.average_rank = {
-                numerator: stats[i].rankSum,
-                denominator: STAT_OPTIONS.length - 1,
-                num: safeDiv(stats[i].rankSum, STAT_OPTIONS.length - 1),
-            };
-            delete stats[i].rankSum;
-        }
+        members = processRanks(members);
 
         await this.database
             .collection("guildData")
-            .insertOne({ stats, updated: Date.now() });
+            .insertOne({ members, updated: Date.now() });
 
         await this.discordClient.user.setPresence({
             activities: [
                 {
-                    name: `${stats.filter((member) => member.is_online).length} ${
-                        stats.filter((member) => member.is_online).length === 1
+                    name: `${members.filter((member) => member.is_online).length} ${
+                        members.filter((member) => member.is_online).length === 1
                             ? "person"
                             : "people"
                     } play`,
@@ -211,24 +172,24 @@ class Scanner {
             status: "online",
         });
 
-        await this.updateRoles(stats);
+        await this.updateRoles(members);
 
         console.log(`Took ${Date.now() - updatingStartTime}ms to update`);
     }
 
-    async updateRoles(stats) {
+    async updateRoles(members) {
         const guild = await this.discordClient.guilds.fetch(GUILD_ID);
         const roles = await Promise.all(
             LEVEL_ROLE_IDS.map((roleId) => guild.roles.fetch(roleId)),
         );
 
-        for (const memberStatsEntry of stats) {
+        for (const memberData of members) {
             try {
                 const roleIndex =
-                    Math.floor(memberStatsEntry.stats.bedwars_level.num / 100) - 1;
+                    Math.floor(memberData.stats.bedwars_level.num / 100) - 1;
                 if (roleIndex > LEVEL_ROLE_IDS.length - 1) {
                     console.error(
-                        `${memberStatsEntry.uuid} has invalid roleIdx with level ${memberStatsEntry.stats.bedwars_level.num}`,
+                        `${memberData.uuid} has invalid roleIdx with level ${memberData.stats.bedwars_level.num}`,
                     );
                     continue;
                 }
@@ -236,7 +197,7 @@ class Scanner {
                 const memberDiscordId = (
                     await this.database
                         .collection("memberRegistry")
-                        .findOne({ uuid: memberStatsEntry.uuid })
+                        .findOne({ uuid: memberData.uuid })
                 )?.id;
                 if (!memberDiscordId) {
                     continue;

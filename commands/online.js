@@ -12,7 +12,7 @@ module.exports = {
                 .toArray()
         )[0];
 
-        const members = guildData?.stats ?? [];
+        const members = guildData?.members ?? [];
         const lastUpdated = guildData?.updated ?? 0;
 
         const membersOnlineString = members

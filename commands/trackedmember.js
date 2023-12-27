@@ -1,5 +1,9 @@
 const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } = require("discord.js");
-const { STAT_OPTIONS, renderStatValueString } = require("../leaderboardUtils");
+const {
+    STAT_OPTIONS,
+    renderStatValueString,
+    simulateData,
+} = require("../leaderboardUtils");
 const axios = require("axios");
 const sharp = require("sharp");
 
@@ -46,30 +50,23 @@ async function generateMinecraftFaceImageBuffer(uuid) {
 }
 
 module.exports = {
-    name: "member",
+    name: "trackedmember",
     exec: async function (interaction, database) {
-        const currentData = (
-            await database
-                .collection("guildData")
-                .find({})
-                .sort({ updated: -1 })
-                .limit(1)
-                .toArray()
-        )[0];
+        const simData = await simulateData(database);
 
-        if (!currentData)
+        if (!simData)
             return interaction.reply({
                 content: "No guild data found!",
                 ephemeral: true,
             });
 
-        const dataTs = currentData?.updated ?? 0;
+        const dataTs = simData?.updated ?? 0;
 
         let memberData;
 
         const usernameArgument = interaction.options.get("username")?.value;
         if (usernameArgument) {
-            memberData = currentData?.members?.find(
+            memberData = simData?.members?.find(
                 (member) => member.name.toUpperCase() === usernameArgument.toUpperCase(),
             );
         } else {
@@ -84,7 +81,7 @@ module.exports = {
                     ephemeral: true,
                 });
 
-            memberData = currentData?.members?.find((member) => member.uuid === uuid);
+            memberData = simData?.members?.find((member) => member.uuid === uuid);
         }
 
         if (!memberData)
@@ -95,7 +92,7 @@ module.exports = {
 
         const embed = new EmbedBuilder()
             .setColor(0x0099ff)
-            .setTitle(`${memberData.name}'s Stats`)
+            .setTitle(`${memberData.name}'s Stats Since Tracking`)
             .setFooter({
                 text: `Last Updated ${
                     dataTs
@@ -105,7 +102,7 @@ module.exports = {
             });
 
         for (const statOption of STAT_OPTIONS) {
-            let members = currentData.members.sort(
+            let members = simData.members.sort(
                 (a, b) => b.stats[statOption.value].num - a.stats[statOption.value].num,
             );
 
@@ -136,7 +133,7 @@ module.exports = {
         return interaction.reply(Object.assign({}, response, { embeds: [embed] }));
     },
     commandData: new SlashCommandBuilder()
-        .setName("member")
+        .setName("trackedmember")
         .setDescription("check stats of a specific member")
         .addStringOption((option) =>
             option.setName("username").setDescription("username you want to check"),

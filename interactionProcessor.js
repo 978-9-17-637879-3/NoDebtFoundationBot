@@ -11,7 +11,7 @@ const commandsMap = Object.fromEntries(
     commands.map((command) => [command.name, command.exec]),
 );
 
-const { generateLeaderboard } = require("./leaderboardUtils");
+const { generateLeaderboard, simulateData } = require("./leaderboardUtils");
 
 module.exports = async (interaction, client, database) => {
     if (interaction.isButton() || interaction.isStringSelectMenu()) {
@@ -43,11 +43,13 @@ module.exports = async (interaction, client, database) => {
             return interaction.message.delete();
         }
 
-        const guildDataAtTimestamp = await database
-            .collection("guildData")
-            .findOne({ updated: leaderboardData.dataTs });
+        const guildData = leaderboardData.tracked
+            ? await simulateData(database, leaderboardData.dataTs)
+            : await database
+                  .collection("guildData")
+                  .findOne({ updated: leaderboardData.dataTs });
 
-        if (!guildDataAtTimestamp)
+        if (!guildData)
             return interaction.reply({
                 content: "Data for that leaderboard could not be found.",
                 ephemeral: true,
@@ -64,9 +66,9 @@ module.exports = async (interaction, client, database) => {
             const veryFirstLastIdx = 10;
             const veryLastFirstIdx = Math.max(
                 0,
-                Math.floor(guildDataAtTimestamp.stats.length / 10) * 10,
+                Math.floor(guildData.members.length / 10) * 10,
             );
-            const veryLastLastIdx = guildDataAtTimestamp.stats.length;
+            const veryLastLastIdx = guildData.members.length;
 
             switch (interaction.customId) {
                 case "first":
@@ -80,10 +82,7 @@ module.exports = async (interaction, client, database) => {
                     );
                     newLastIdx = Math.max(
                         veryFirstLastIdx,
-                        Math.min(
-                            leaderboardData.firstIdx,
-                            guildDataAtTimestamp.stats.length,
-                        ),
+                        Math.min(leaderboardData.firstIdx, guildData.members.length),
                     );
                     break;
                 case "next":
@@ -105,7 +104,7 @@ module.exports = async (interaction, client, database) => {
                 newFirstIdx,
                 newLastIdx,
                 newStat,
-                guildDataAtTimestamp,
+                guildData,
                 leaderboardData.dataTs,
             ),
         );
