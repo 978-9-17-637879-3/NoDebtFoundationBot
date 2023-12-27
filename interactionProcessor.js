@@ -14,13 +14,13 @@ const commandsMap = Object.fromEntries(
 const { generateLeaderboard, simulateData } = require("./leaderboardUtils");
 
 module.exports = async (interaction, client, database) => {
-    if (interaction.isButton() || interaction.isStringSelectMenu()) {
-        if (
-            !["first", "prev", "next", "last", "delete"].includes(interaction.customId) &&
-            interaction.customId !== "statsDropdown"
-        )
-            return;
+    if (interaction.isChatInputCommand()) {
+        const commandExec = commandsMap[interaction.commandName];
 
+        if (!commandExec) return;
+
+        return commandExec(interaction, database);
+    } else {
         const leaderboardData = await database
             .collection("leaderboards")
             .findOne({ id: interaction.message.id });
@@ -38,16 +38,30 @@ module.exports = async (interaction, client, database) => {
             });
         }
 
-        if (interaction.customId === "delete") {
+        if (interaction.isButton() && interaction.customId === "delete") {
             await client.channels.fetch(interaction.channelId); // channel that message was in must be cached for the message to be deleted.
             return interaction.message.delete();
         }
 
-        const guildData = leaderboardData.since_tracking
-            ? await simulateData(database, leaderboardData.dataTs)
-            : await database
-                  .collection("guildData")
-                  .findOne({ updated: leaderboardData.dataTs });
+        let guildData;
+        if (interaction.isButton() && interaction.customId === "update") {
+            guildData = leaderboardData.since_tracking
+                ? await simulateData(database)
+                : (
+                      await database
+                          .collection("guildData")
+                          .find({})
+                          .sort({ updated: -1 })
+                          .limit(1)
+                          .toArray()
+                  )[0];
+        } else {
+            guildData = leaderboardData.since_tracking
+                ? await simulateData(database, leaderboardData.dataTs)
+                : await database
+                      .collection("guildData")
+                      .findOne({ updated: leaderboardData.dataTs });
+        }
 
         if (!guildData)
             return interaction.reply({
@@ -59,7 +73,10 @@ module.exports = async (interaction, client, database) => {
         let newFirstIdx = leaderboardData.firstIdx;
         let newLastIdx = leaderboardData.lastIdx;
 
-        if (interaction.isStringSelectMenu()) {
+        if (
+            interaction.isStringSelectMenu() &&
+            interaction.customId === "statsDropdown"
+        ) {
             newStat = interaction.values[0];
         } else if (interaction.isButton()) {
             const veryFirstFirstIdx = 0;
@@ -72,6 +89,7 @@ module.exports = async (interaction, client, database) => {
 
             switch (interaction.customId) {
                 case "first":
+                case "update":
                     newFirstIdx = veryFirstFirstIdx;
                     newLastIdx = veryFirstLastIdx;
                     break;
@@ -105,22 +123,21 @@ module.exports = async (interaction, client, database) => {
                 newLastIdx,
                 newStat,
                 guildData,
-                leaderboardData.dataTs,
-                leaderboardData.since_tracking
+                guildData.updated,
+                leaderboardData.since_tracking,
             ),
         );
 
-        return database
-            .collection("leaderboards")
-            .updateOne(
-                { id: interaction.message.id },
-                { $set: { stat: newStat, firstIdx: newFirstIdx, lastIdx: newLastIdx } },
-            );
-    } else if (interaction.isChatInputCommand()) {
-        const commandExec = commandsMap[interaction.commandName];
-
-        if (!commandExec) return;
-
-        return commandExec(interaction, database);
+        return database.collection("leaderboards").updateOne(
+            { id: interaction.message.id },
+            {
+                $set: {
+                    stat: newStat,
+                    firstIdx: newFirstIdx,
+                    lastIdx: newLastIdx,
+                    dataTs: guildData.updated,
+                },
+            },
+        );
     }
 };

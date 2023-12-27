@@ -117,6 +117,12 @@ module.exports.generateLeaderboard = async (
         .setStyle(ButtonStyle.Primary)
         .setEmoji("⏭️");
 
+    const updateButton = new ButtonBuilder()
+        .setCustomId("update")
+        .setLabel("Update")
+        .setStyle(ButtonStyle.Success)
+        .setEmoji("🔁");
+
     const deleteButton = new ButtonBuilder()
         .setCustomId("delete")
         .setLabel("Delete")
@@ -125,17 +131,21 @@ module.exports.generateLeaderboard = async (
 
     const dropdownRow = new ActionRowBuilder().addComponents(statsDropdown);
 
-    const buttonsRow = new ActionRowBuilder().addComponents(
+    const firstButtonsRow = new ActionRowBuilder().addComponents(
         firstButton,
         prevButton,
         nextButton,
         lastButton,
+    );
+
+    const secondButtonsRow = new ActionRowBuilder().addComponents(
+        updateButton,
         deleteButton,
     );
 
     return {
         embeds: [embed],
-        components: [dropdownRow, buttonsRow],
+        components: [dropdownRow, firstButtonsRow, secondButtonsRow],
     };
 };
 
