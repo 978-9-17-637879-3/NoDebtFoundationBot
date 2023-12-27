@@ -7,6 +7,8 @@ const {
     HYPIXEL_API_KEY,
     HYPIXEL_GUILD_ID,
     TRACKING_UUID_BLACKLIST,
+    LEVEL_ROLE_IDS,
+    GUILD_ID,
 } = require("./config.json");
 
 const sleep = (sleepMs) => new Promise((resolve) => setTimeout(resolve, sleepMs));
@@ -209,7 +211,45 @@ class Scanner {
             status: "online",
         });
 
+        await this.updateRoles(stats);
+
         console.log(`Took ${Date.now() - updatingStartTime}ms to update`);
+    }
+
+    async updateRoles(stats) {
+        const guild = await this.discordClient.guilds.fetch(GUILD_ID);
+        const roles = await Promise.all(
+            LEVEL_ROLE_IDS.map((roleId) => guild.roles.fetch(roleId)),
+        );
+
+        for (const memberStatsEntry of stats) {
+            try {
+                const roleIndex =
+                    Math.floor(memberStatsEntry.stats.bedwars_level.num / 100) - 1;
+                if (roleIndex > LEVEL_ROLE_IDS.length - 1) {
+                    console.error(
+                        `${memberStatsEntry.uuid} has invalid roleIdx with level ${memberStatsEntry.stats.bedwars_level.num}`,
+                    );
+                    continue;
+                }
+
+                const memberDiscordId = (
+                    await this.database
+                        .collection("memberRegistry")
+                        .findOne({ uuid: memberStatsEntry.uuid })
+                )?.id;
+                if (!memberDiscordId) {
+                    continue;
+                }
+
+                const discordMember = await guild.members.fetch(memberDiscordId);
+                for (let i = 0; i <= roleIndex; i++) {
+                    await discordMember.roles.add(roles[i]);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
     }
 }
 
