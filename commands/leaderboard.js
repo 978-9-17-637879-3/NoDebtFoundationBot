@@ -3,10 +3,11 @@ const {
     generateLeaderboard,
     STAT_OPTIONS,
     simulateData,
+    MEMBER_COUNT_PER_PAGE,
 } = require("../leaderboardUtils");
 
 const FIRST_PLAYER_IDX = 0;
-const LAST_PLAYER_IDX = 10;
+const LAST_PLAYER_IDX = MEMBER_COUNT_PER_PAGE;
 
 module.exports = {
     name: "leaderboard",

@@ -11,7 +11,11 @@ const commandsMap = Object.fromEntries(
     commands.map((command) => [command.name, command.exec]),
 );
 
-const { generateLeaderboard, simulateData } = require("./leaderboardUtils");
+const {
+    generateLeaderboard,
+    simulateData,
+    MEMBER_COUNT_PER_PAGE,
+} = require("./leaderboardUtils");
 
 module.exports = async (interaction, client, database) => {
     if (interaction.isChatInputCommand()) {
@@ -80,10 +84,11 @@ module.exports = async (interaction, client, database) => {
             newStat = interaction.values[0];
         } else if (interaction.isButton()) {
             const veryFirstFirstIdx = 0;
-            const veryFirstLastIdx = 10;
+            const veryFirstLastIdx = MEMBER_COUNT_PER_PAGE;
             const veryLastFirstIdx = Math.max(
                 0,
-                Math.floor(guildData.members.length / 10) * 10,
+                Math.floor(guildData.members.length / MEMBER_COUNT_PER_PAGE) *
+                    MEMBER_COUNT_PER_PAGE,
             );
             const veryLastLastIdx = guildData.members.length;
 
@@ -96,7 +101,7 @@ module.exports = async (interaction, client, database) => {
                 case "prev":
                     newFirstIdx = Math.max(
                         veryFirstFirstIdx,
-                        leaderboardData.firstIdx - 10,
+                        leaderboardData.firstIdx - MEMBER_COUNT_PER_PAGE,
                     );
                     newLastIdx = Math.max(
                         veryFirstLastIdx,
@@ -105,10 +110,13 @@ module.exports = async (interaction, client, database) => {
                     break;
                 case "next":
                     newFirstIdx = Math.min(
-                        leaderboardData.firstIdx + 10,
+                        leaderboardData.firstIdx + MEMBER_COUNT_PER_PAGE,
                         veryLastFirstIdx,
                     );
-                    newLastIdx = Math.min(leaderboardData.lastIdx + 10, veryLastLastIdx);
+                    newLastIdx = Math.min(
+                        leaderboardData.lastIdx + MEMBER_COUNT_PER_PAGE,
+                        veryLastLastIdx,
+                    );
                     break;
                 case "last":
                     newFirstIdx = veryLastFirstIdx;

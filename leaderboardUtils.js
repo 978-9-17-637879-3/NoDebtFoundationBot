@@ -6,7 +6,9 @@ const {
     StringSelectMenuBuilder,
 } = require("discord.js");
 
-const STAT_OPTIONS = [
+module.exports.MEMBER_COUNT_PER_PAGE = 5;
+
+module.exports.STAT_OPTIONS = [
     { name: "Bedwars Level", value: "bedwars_level" },
     { name: "FKDR", value: "fkdr", ratio: true },
     {
@@ -23,15 +25,22 @@ const STAT_OPTIONS = [
     { name: "Average Rank", value: "average_rank", ratio: true, reverse: true },
 ];
 
-module.exports.STAT_OPTIONS = STAT_OPTIONS;
-
 module.exports.renderStatValueString = (memberData, stat) => {
     if (stat.ratio) {
-        return memberData.stats[stat.value].num.toFixed(2);
+        let result = `${memberData.stats[stat.value].num.toFixed(2)}`;
+
+        if (stat.value !== "average_rank")
+            result += ` | (${memberData.stats[stat.value].numerator}/${
+                memberData.stats[stat.value].denominator
+            })`;
+
+        return result;
     } else if (stat.percentage) {
-        return (memberData.stats[stat.value].num * 100).toFixed(1) + "%";
+        return `${(memberData.stats[stat.value].num * 100).toFixed(1)}% | (${
+            memberData.stats[stat.value].numerator
+        }/${memberData.stats[stat.value].denominator})`;
     } else {
-        return memberData.stats[stat.value].num;
+        return `${memberData.stats[stat.value].num}`;
     }
 };
 
@@ -49,7 +58,9 @@ module.exports.generateLeaderboard = async (
         (a, b) => b.stats[statValue].num - a.stats[statValue].num,
     );
 
-    const stat = STAT_OPTIONS.find((statOption) => statOption.value === statValue);
+    const stat = module.exports.STAT_OPTIONS.find(
+        (statOption) => statOption.value === statValue,
+    );
 
     if (stat.reverse) lbMembers.reverse();
     lbMembers = lbMembers.slice(first, last);
@@ -69,7 +80,9 @@ module.exports.generateLeaderboard = async (
         const member = lbMembers[i];
         embed.addFields({
             name: `${first + i + 1}. [${member.stats.bedwars_level.num}☆] ${member.name}`,
-            value: STAT_OPTIONS.filter((stat) => stat.value != "bedwars_level")
+            value: module.exports.STAT_OPTIONS.filter(
+                (stat) => stat.value != "bedwars_level",
+            )
                 .map(
                     (stat) =>
                         `${stat.name}: ${module.exports.renderStatValueString(
@@ -77,17 +90,19 @@ module.exports.generateLeaderboard = async (
                             stat,
                         )}`,
                 )
-                .join(", "),
+                .join("\n"),
         });
     }
 
     const statsDropdown = new StringSelectMenuBuilder()
         .setCustomId("statsDropdown")
         .setPlaceholder(
-            STAT_OPTIONS.find((statOption) => statOption.value === statValue).name,
+            module.exports.STAT_OPTIONS.find(
+                (statOption) => statOption.value === statValue,
+            ).name,
         )
         .addOptions(
-            ...STAT_OPTIONS.map((statOption) => ({
+            ...module.exports.STAT_OPTIONS.map((statOption) => ({
                 label: statOption.name,
                 value: statOption.value,
             })),
@@ -162,7 +177,7 @@ module.exports.safeAdder = (...args) => {
 };
 
 module.exports.processRanks = (members) => {
-    for (const statOption of STAT_OPTIONS) {
+    for (const statOption of module.exports.STAT_OPTIONS) {
         if (statOption.value === "average_rank") continue;
 
         let sortedStatsCopy = members
@@ -184,8 +199,11 @@ module.exports.processRanks = (members) => {
     for (let i = 0; i < members.length; i++) {
         members[i].stats.average_rank = {
             numerator: members[i].rankSum,
-            denominator: STAT_OPTIONS.length - 1,
-            num: module.exports.safeDiv(members[i].rankSum, STAT_OPTIONS.length - 1),
+            denominator: module.exports.STAT_OPTIONS.length - 1,
+            num: module.exports.safeDiv(
+                members[i].rankSum,
+                module.exports.STAT_OPTIONS.length - 1,
+            ),
         };
         delete members[i].rankSum;
     }
