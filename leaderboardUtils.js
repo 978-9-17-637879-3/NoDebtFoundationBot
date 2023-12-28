@@ -11,14 +11,14 @@ module.exports.MEMBER_COUNT_PER_PAGE = 5;
 module.exports.STAT_OPTIONS = [
     { name: "Bedwars Level", value: "bedwars_level" },
     { name: "FKDR", value: "fkdr", ratio: true },
+    { name: "Wins/Losses", value: "wlr", ratio: true },
+    { name: "Beds Broken/Lost", value: "bblr", ratio: true },
     {
         name: "Void Deaths/Regular Death",
         value: "void_deaths_per_death",
         percentage: true,
         reverse: true,
     },
-    { name: "Beds Broken/Lost", value: "bblr", ratio: true },
-    { name: "Wins/Losses", value: "wlr", ratio: true },
     { name: "Emeralds/Game", value: "emeralds_per_game", ratio: true },
     { name: "Diamonds/Game", value: "diamonds_per_game", ratio: true },
     { name: "Weekly GEXP", value: "weekly_guild_experience" },
