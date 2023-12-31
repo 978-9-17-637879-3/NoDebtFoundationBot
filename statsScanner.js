@@ -41,6 +41,64 @@ class Scanner {
         this.database = database;
     }
 
+    async diffyStats(currentData) {
+        const newData = Object.assign({}, currentData);
+        for (let i = 0; i < newData.members.length; i++) {
+            const findDict = {
+                "members.uuid": newData.members[i].uuid,
+            };
+
+            for (const key of Object.keys(newData.members[i].stats)) {
+                findDict[`members.0.stats.${key}.num`] = { $exists: true }; // legacy data support
+            }
+
+            const oldestStatsForMember = (
+                await this.database
+                    .collection("guildData")
+                    .find(findDict)
+                    .sort({ updated: 1 })
+                    .limit(1)
+                    .toArray()
+            )[0]?.members?.find((m) => m.uuid === newData.members[i].uuid);
+
+            if (!oldestStatsForMember) {
+                return currentData;
+            }
+
+            const diffStats = {};
+
+            for (const key of Object.keys(newData.members[i].stats)) {
+                if (key === "average_rank") continue;
+
+                if (!oldestStatsForMember.stats[key].numerator) {
+                    diffStats[key] = newData.members[i].stats[key];
+                    continue;
+                }
+
+                diffStats[key] = {};
+
+                diffStats[key].numerator =
+                    newData.members[i].stats[key].numerator -
+                    oldestStatsForMember.stats[key].numerator;
+
+                diffStats[key].denominator =
+                    newData.members[i].stats[key].denominator -
+                    oldestStatsForMember.stats[key].denominator;
+
+                diffStats[key].num = safeDiv(
+                    diffStats[key].numerator,
+                    diffStats[key].denominator,
+                );
+            }
+
+            newData.members[i].diffStats = diffStats;
+        }
+
+        newData.members = processRanks(newData.members, "diffStats");
+
+        return newData;
+    }
+
     async scan() {
         const guildResponse = await axios({
             method: "get",
@@ -152,11 +210,10 @@ class Scanner {
             await sleep(delay);
         }
 
-        members = processRanks(members);
+        members = processRanks(members, "stats");
+        const newData = await this.diffyStats({ members, updated: Date.now() });
 
-        await this.database
-            .collection("guildData")
-            .insertOne({ members, updated: Date.now() });
+        await this.database.collection("guildData").insertOne(newData);
 
         await this.discordClient.user.setPresence({
             activities: [

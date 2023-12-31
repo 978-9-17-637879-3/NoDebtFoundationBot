@@ -1,9 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } = require("discord.js");
-const {
-    STAT_OPTIONS,
-    renderStatValueString,
-    simulateData,
-} = require("../leaderboardUtils");
+const { STAT_OPTIONS, renderStatValueString, getStat } = require("../leaderboardUtils");
 const axios = require("axios");
 const sharp = require("sharp");
 
@@ -54,16 +50,14 @@ module.exports = {
     exec: async function (interaction, database) {
         const since_tracking = interaction.options.get("since_tracking")?.value;
 
-        const data = since_tracking
-            ? await simulateData(database)
-            : (
-                  await database
-                      .collection("guildData")
-                      .find({})
-                      .sort({ updated: -1 })
-                      .limit(1)
-                      .toArray()
-              )[0];
+        const data = (
+            await database
+                .collection("guildData")
+                .find({})
+                .sort({ updated: -1 })
+                .limit(1)
+                .toArray()
+        )[0];
 
         if (!data)
             return interaction.reply({
@@ -116,7 +110,9 @@ module.exports = {
 
         for (const statOption of STAT_OPTIONS) {
             let members = data.members.sort(
-                (a, b) => b.stats[statOption.value].num - a.stats[statOption.value].num,
+                (a, b) =>
+                    getStat(b, statOption.value, since_tracking).num -
+                    getStat(a, statOption.value, since_tracking).num,
             );
 
             if (statOption.reverse) members.reverse();
@@ -125,7 +121,11 @@ module.exports = {
 
             embed.addFields({
                 name: statOption.name,
-                value: `#${rank} @ ${renderStatValueString(memberData, statOption)}`,
+                value: `#${rank} @ ${renderStatValueString(
+                    memberData,
+                    statOption,
+                    since_tracking,
+                )}`,
             });
         }
 

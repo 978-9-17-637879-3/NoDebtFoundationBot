@@ -11,11 +11,7 @@ const commandsMap = Object.fromEntries(
     commands.map((command) => [command.name, command.exec]),
 );
 
-const {
-    generateLeaderboard,
-    simulateData,
-    MEMBER_COUNT_PER_PAGE,
-} = require("./leaderboardUtils");
+const { generateLeaderboard, MEMBER_COUNT_PER_PAGE } = require("./leaderboardUtils");
 
 module.exports = async (interaction, client, database) => {
     if (interaction.isChatInputCommand()) {
@@ -47,25 +43,19 @@ module.exports = async (interaction, client, database) => {
             return interaction.message.delete();
         }
 
-        let guildData;
-        if (interaction.isButton() && interaction.customId === "update") {
-            guildData = leaderboardData.since_tracking
-                ? await simulateData(database)
-                : (
+        const guildData =
+            interaction.isButton() && interaction.customId === "update"
+                ? (
                       await database
                           .collection("guildData")
                           .find({})
                           .sort({ updated: -1 })
                           .limit(1)
                           .toArray()
-                  )[0];
-        } else {
-            guildData = leaderboardData.since_tracking
-                ? await simulateData(database, leaderboardData.dataTs)
+                  )[0]
                 : await database
                       .collection("guildData")
                       .findOne({ updated: leaderboardData.dataTs });
-        }
 
         if (!guildData)
             return interaction.reply({

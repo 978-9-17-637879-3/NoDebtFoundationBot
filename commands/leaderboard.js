@@ -2,7 +2,6 @@ const { SlashCommandBuilder } = require("discord.js");
 const {
     generateLeaderboard,
     STAT_OPTIONS,
-    simulateData,
     MEMBER_COUNT_PER_PAGE,
 } = require("../leaderboardUtils");
 
@@ -14,16 +13,14 @@ module.exports = {
     exec: async function (interaction, database) {
         const since_tracking = interaction.options.get("since_tracking")?.value;
 
-        const data = since_tracking
-            ? await simulateData(database)
-            : (
-                  await database
-                      .collection("guildData")
-                      .find({})
-                      .sort({ updated: -1 })
-                      .limit(1)
-                      .toArray()
-              )[0];
+        const data = (
+            await database
+                .collection("guildData")
+                .find({})
+                .sort({ updated: -1 })
+                .limit(1)
+                .toArray()
+        )[0];
 
         const dataTs = data?.updated ?? 0;
         const stat = interaction.options.get("stat")?.value ?? "bedwars_level";

@@ -25,22 +25,26 @@ module.exports.STAT_OPTIONS = [
     { name: "Average Rank", value: "average_rank", ratio: true, reverse: true },
 ];
 
-module.exports.renderStatValueString = (memberData, stat) => {
-    if (stat.ratio) {
-        let result = `${memberData.stats[stat.value].num.toFixed(2)}`;
+module.exports.getStat = (memberData, stat, since_tracking) => {
+    return memberData[since_tracking ? "diffStats" : "stats"][stat];
+};
 
-        if (stat.value !== "average_rank")
-            result += ` | (${memberData.stats[stat.value].numerator}/${
-                memberData.stats[stat.value].denominator
-            })`;
+module.exports.renderStatValueString = (memberData, statOption, since_tracking) => {
+    const stat = module.exports.getStat(memberData, statOption.value, since_tracking);
+
+    if (statOption.ratio) {
+        let result = `${stat.num.toFixed(2)}`;
+
+        if (statOption.value !== "average_rank")
+            result += ` | (${stat.numerator}/${stat.denominator})`;
 
         return result;
-    } else if (stat.percentage) {
-        return `${(memberData.stats[stat.value].num * 100).toFixed(1)}% | (${
-            memberData.stats[stat.value].numerator
-        }/${memberData.stats[stat.value].denominator})`;
+    } else if (statOption.percentage) {
+        return `${(stat.num * 100).toFixed(1)}% | (${stat.numerator}/${
+            stat.denominator
+        })`;
     } else {
-        return `${memberData.stats[stat.value].num}`;
+        return `${stat.num}`;
     }
 };
 
@@ -54,8 +58,12 @@ module.exports.generateLeaderboard = async (
 ) => {
     const members = guildData?.members ?? [];
 
+    const statsKey = since_tracking ? "diffStats" : "stats";
+
     let lbMembers = members.sort(
-        (a, b) => b.stats[statValue].num - a.stats[statValue].num,
+        (a, b) =>
+            module.exports.getStat(b, statValue, since_tracking).num -
+            module.exports.getStat(a, statValue, since_tracking).num,
     );
 
     const stat = module.exports.STAT_OPTIONS.find(
@@ -79,7 +87,9 @@ module.exports.generateLeaderboard = async (
     for (let i = 0; i < lbMembers.length; i++) {
         const member = lbMembers[i];
         embed.addFields({
-            name: `${first + i + 1}. [${member.stats.bedwars_level.num}☆] ${member.name}`,
+            name: `${first + i + 1}. [${member[statsKey].bedwars_level.num}☆] ${
+                member.name
+            }`,
             value: module.exports.STAT_OPTIONS.filter(
                 (stat) => stat.value != "bedwars_level",
             )
@@ -88,6 +98,7 @@ module.exports.generateLeaderboard = async (
                         `${stat.name}: ${module.exports.renderStatValueString(
                             member,
                             stat,
+                            since_tracking,
                         )}`,
                 )
                 .join("\n"),
@@ -176,14 +187,15 @@ module.exports.safeAdder = (...args) => {
     return sum;
 };
 
-module.exports.processRanks = (members) => {
+module.exports.processRanks = (members, statsKey) => {
     for (const statOption of module.exports.STAT_OPTIONS) {
         if (statOption.value === "average_rank") continue;
 
         let sortedStatsCopy = members
             .slice() // copies array so that sort doesn't mutate
             .sort(
-                (a, b) => b.stats[statOption.value].num - a.stats[statOption.value].num,
+                (a, b) =>
+                    b[statsKey][statOption.value].num - a[statsKey][statOption.value].num,
             );
 
         if (statOption.reverse) sortedStatsCopy.reverse();
@@ -197,7 +209,7 @@ module.exports.processRanks = (members) => {
     }
 
     for (let i = 0; i < members.length; i++) {
-        members[i].stats.average_rank = {
+        members[i][statsKey].average_rank = {
             numerator: members[i].rankSum,
             denominator: module.exports.STAT_OPTIONS.length - 1,
             num: module.exports.safeDiv(
@@ -209,82 +221,4 @@ module.exports.processRanks = (members) => {
     }
 
     return members;
-};
-
-module.exports.simulateData = async (database, timestamp) => {
-    const currentData = (
-        timestamp
-            ? await database
-                  .collection("guildData")
-                  .find({ updated: timestamp })
-                  .limit(1)
-                  .toArray()
-            : await database
-                  .collection("guildData")
-                  .find({})
-                  .sort({ updated: -1 })
-                  .limit(1)
-                  .toArray()
-    )[0];
-
-    const simData = { members: [], updated: currentData.updated };
-
-    for (const member of currentData.members) {
-        const findDict = {
-            "members.uuid": member.uuid,
-        };
-
-        for (const key of Object.keys(member.stats)) {
-            findDict[`members.0.stats.${key}.num`] = { $exists: true }; // legacy data support
-        }
-
-        const oldestStatsForMember = (
-            await database
-                .collection("guildData")
-                .find(findDict)
-                .sort({ updated: 1 })
-                .limit(1)
-                .toArray()
-        )[0]?.members?.find((m) => m.uuid === member.uuid);
-
-        if (!oldestStatsForMember) {
-            console.error("impossible?");
-            return;
-        }
-
-        const newMem = Object.assign({}, member);
-
-        const diffStats = {};
-
-        for (const key of Object.keys(member.stats)) {
-            if (key === "average_rank") continue;
-
-            if (!oldestStatsForMember.stats[key].numerator) {
-                diffStats[key] = member.stats[key];
-                continue;
-            }
-
-            diffStats[key] = {};
-
-            diffStats[key].numerator =
-                member.stats[key].numerator - oldestStatsForMember.stats[key].numerator;
-
-            diffStats[key].denominator =
-                member.stats[key].denominator -
-                oldestStatsForMember.stats[key].denominator;
-
-            diffStats[key].num = module.exports.safeDiv(
-                diffStats[key].numerator,
-                diffStats[key].denominator,
-            );
-        }
-
-        newMem.stats = diffStats;
-
-        simData.members.push(newMem);
-    }
-
-    simData.members = module.exports.processRanks(simData.members);
-
-    return simData;
 };
