@@ -11,7 +11,11 @@ const commandsMap = Object.fromEntries(
     commands.map((command) => [command.name, command.exec]),
 );
 
-const { generateLeaderboard, MEMBER_COUNT_PER_PAGE } = require("./leaderboardUtils");
+const {
+    generateLeaderboard,
+    MEMBER_COUNT_PER_PAGE,
+    filterMembersWhoHaventPlayedAGame,
+} = require("./leaderboardUtils");
 
 module.exports = async (interaction, client, database) => {
     if (interaction.isChatInputCommand()) {
@@ -62,6 +66,11 @@ module.exports = async (interaction, client, database) => {
                 content: "Data for that leaderboard could not be found.",
                 ephemeral: true,
             });
+
+        guildData.members = filterMembersWhoHaventPlayedAGame(
+            guildData.members,
+            leaderboardData.since_tracking,
+        );
 
         let newStat = leaderboardData.stat;
         let newFirstIdx = leaderboardData.firstIdx;

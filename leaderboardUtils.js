@@ -48,6 +48,14 @@ module.exports.renderStatValueString = (memberData, statOption, since_tracking) 
     }
 };
 
+module.exports.filterMembersWhoHaventPlayedAGame = (members, since_tracking) => {
+    return members.filter(
+        (member) =>
+            module.exports.getStat(member, "emeralds_per_game", since_tracking)
+                ?.denominator > 0,
+    );
+};
+
 module.exports.generateLeaderboard = async (
     first,
     last,
@@ -56,9 +64,12 @@ module.exports.generateLeaderboard = async (
     dataTs,
     since_tracking,
 ) => {
-    const members = guildData?.members ?? [];
-
     const statsKey = since_tracking ? "diffStats" : "stats";
+
+    const members = module.exports.filterMembersWhoHaventPlayedAGame(
+        guildData?.members ?? [],
+        statsKey,
+    );
 
     let lbMembers = members.sort(
         (a, b) =>
