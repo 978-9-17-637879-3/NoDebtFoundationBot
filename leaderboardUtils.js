@@ -102,7 +102,7 @@ module.exports.generateLeaderboard = async (
                 member.name
             }`,
             value: module.exports.STAT_OPTIONS.filter(
-                (stat) => stat.value != "bedwars_level",
+                (stat) => stat.value !== "bedwars_level",
             )
                 .map(
                     (stat) =>
