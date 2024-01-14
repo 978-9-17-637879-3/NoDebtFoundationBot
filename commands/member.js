@@ -1,5 +1,10 @@
 const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } = require("discord.js");
-const { STAT_OPTIONS, renderStatValueString, getStat } = require("../leaderboardUtils");
+const {
+    STAT_OPTIONS,
+    renderStatValueString,
+    getStat,
+    filterMembersWhoHaventPlayedAGame,
+} = require("../leaderboardUtils");
 const axios = require("axios");
 const sharp = require("sharp");
 
@@ -65,13 +70,15 @@ module.exports = {
                 ephemeral: true,
             });
 
+        data.members = filterMembersWhoHaventPlayedAGame(data.members, since_tracking);
+
         const dataTs = data?.updated ?? 0;
 
         let memberData;
 
         const usernameArgument = interaction.options.get("username")?.value;
         if (usernameArgument) {
-            memberData = data?.members?.find(
+            memberData = data.members.find(
                 (member) => member.name.toUpperCase() === usernameArgument.toUpperCase(),
             );
         } else {
@@ -86,7 +93,7 @@ module.exports = {
                     ephemeral: true,
                 });
 
-            memberData = data?.members?.find((member) => member.uuid === uuid);
+            memberData = data.members.find((member) => member.uuid === uuid);
         }
 
         if (!memberData)
