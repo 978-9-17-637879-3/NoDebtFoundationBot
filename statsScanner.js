@@ -261,8 +261,10 @@ class Scanner {
                 }
 
                 const discordMember = await guild.members.fetch(memberDiscordId);
-                for (let i = 0; i <= roleIndex; i++) {
-                    await discordMember.roles.add(roles[i]);
+                if (discordMember) {
+                    for (let i = 0; i <= roleIndex; i++) {
+                        await discordMember.roles.add(roles[i]);
+                    }
                 }
             } catch (e) {
                 console.error(e);
